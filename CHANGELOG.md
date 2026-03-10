@@ -11,6 +11,14 @@
 
 ## Changelog
 
+### BUG-005 — done (Extract Items button misleadingly showed estimates)
+
+- **Root cause:** Merge confirmation modal always displayed `£0 – £0 – £0` for extract-only items because `fmt(null)` formats as `£0`. Upload zone desc said "Estimates tuned for..." even though primary action is extract-only. User message sent to AI was identical for both modes.
+- **Fix 1:** Merge modal now shows "No estimates — use ✦ buttons after import" instead of `£0` values when eLow/eMid/eHigh are all null.
+- **Fix 2:** Upload zone desc changed from "Estimates tuned for [area]" to neutral "PDF or images — extract items, then estimate separately".
+- **Fix 3:** AI user message now differs per mode — extract-only says "Do NOT estimate costs", estimates mode says "with cost estimates for [location]".
+- **Fix 4:** Added hint text under each parse button: "Fast — items only, no cost estimates" and "Slower — includes eLow/eMid/eHigh + components".
+
 ### v1.6.0 — 2026-03-10 (Decoupled Spec Parsing & Selective Estimation)
 
 - **FEAT-021:** Two-mode spec parsing, selective AI estimation, and manual estimate entry
@@ -102,6 +110,7 @@
 |----|----------|--------|-------------|---------------------|-------------|
 | BUG-003 | high | done | JSON parse failed on spec/tender AI responses | Upload spec or tender PDF, parse via AI — response contains markdown code fences or preamble text that breaks JSON.parse | 2026-03-10 |
 | BUG-004 | high | done | JSON parse fails on large AI responses despite valid-looking start | max_tokens too low (4096) causes truncation with component arrays. extractJSON had no repair logic for truncated JSON. | 2026-03-10 |
+| BUG-005 | medium | done | Extract Items button misleadingly showed estimates | Merge modal showed £0 values for extract-only items; upload zone desc implied estimates; AI user message was identical for both modes | 2026-03-10 |
 
 ## Open Feature Requests
 
@@ -151,6 +160,7 @@
 | FEAT-020 | Component breakdown for spec items and tenders | Part 1: data model + AI parsing + merge modal label. Part 2: expandable sub-rows in comparison matrix with chevron toggle, tender component parallel display, components total row. | 2026-03-10 |
 | BUG-004 | JSON parse fails on large AI responses | Increased max_tokens 4096→16384, added repairTruncatedJSON helper (unclosed string handling, bracket closing), stop_reason truncation detection, clear console logging. | 2026-03-10 |
 | FEAT-021 | Two-mode spec parsing, selective estimation & manual entry | Part 1: extract-only vs with-estimates modes. Part 2: per-item ✦ button, per-section Est, bulk Get All Estimates with progress. Part 3: inline manual estimate editing (click Range column), clear estimates button. | 2026-03-10 |
+| BUG-005 | Extract Items button misleadingly showed estimates | Merge modal shows "No estimates" for extract-only items. Upload zone desc neutralised. AI user message differentiated. Hint text under buttons. | 2026-03-10 |
 
 ---
 
