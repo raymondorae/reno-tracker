@@ -131,16 +131,12 @@ This runs entirely client-side. No backend needed. User provides their own Anthr
 
 ## Next Steps (Priority Order)
 
-1. ~~FEAT-011: Upload zones~~ — Done (v1.1.0)
-2. ~~FEAT-014: Owner Supplied v2 — multi-option~~ — Done (v1.1.0)
-3. ~~FEAT-010: Add new owner-supplied items~~ — Done (v1.1.0)
-4. ~~FEAT-012/013/015: AI parsing of spec and tenders~~ — Done (v1.3.0)
-5. ~~FEAT-004/005: Add/edit/delete spec items and tenders in UI~~ — Done (v1.4.0)
-6. ~~FEAT-019: Multi-project support~~ — Done (v1.5.0)
-7. ~~FEAT-021: Two-mode spec parsing, selective estimation, manual entry~~ — Done (v1.6.0)
-8. ~~FEAT-024: Budget & contingency editing~~ — Done (v1.7.0)
-9. ~~FEAT-001: Excel & JSON export~~ — Done (v1.7.1)
-10. ~~FEAT-025: Supabase Auth & Cloud Storage~~ — Done (v2.0.0)
-11. FEAT-006: Add/edit/delete scenarios in UI
-11. FEAT-007: Custom milestone editing
-12. FEAT-009: Mobile responsive polish
+1. FEAT-009: Mobile responsive polish
+2. FEAT-027: Minimise AI token costs
+3. FEAT-007: Custom milestone editing
+4. FEAT-006: Add/edit/delete scenarios in UI
+5. FEAT-026: Link to Homegrown app (shared home screen)
+6. FEAT-028: Google Docs and .docx upload support
+7. FEAT-029: Paywall for AI features
+8. FEAT-003: Print-friendly / PDF export view
+9. FEAT-008: Photo/receipt attachment per item

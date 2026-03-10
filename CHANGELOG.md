@@ -190,45 +190,21 @@
 
 ## Open Bugs
 
-| ID | Priority | Status | Description | Steps to Reproduce | Date Logged |
-|----|----------|--------|-------------|---------------------|-------------|
-| BUG-003 | high | done | JSON parse failed on spec/tender AI responses | Upload spec or tender PDF, parse via AI — response contains markdown code fences or preamble text that breaks JSON.parse | 2026-03-10 |
-| BUG-004 | high | done | JSON parse fails on large AI responses despite valid-looking start | max_tokens too low (4096) causes truncation with component arrays. extractJSON had no repair logic for truncated JSON. | 2026-03-10 |
-| BUG-005 | medium | done | Extract Items button misleadingly showed estimates | Merge modal showed £0 values for extract-only items; upload zone desc implied estimates; AI user message was identical for both modes | 2026-03-10 |
-| BUG-006 | medium | done | Collapsible categories not working | Category headers in comparison matrix don't expand/collapse — CATS.map() with nested arrays + nulls caused React reconciliation issues. Fixed with flatMap. | 2026-03-10 |
-| BUG-008 | medium | done | Budget input not editable | v1.7.0 placed inputs in tier card header — users expected to click the "TOTAL BUDGET £0" summary card. Moved editing into the summary card. | 2026-03-10 |
+None. All bugs resolved.
 
 ## Open Feature Requests
 
 | ID | Priority | Status | Description | Notes | Date Logged |
 |----|----------|--------|-------------|-------|-------------|
-| FEAT-001 | medium | done | Excel & JSON export/import | Multi-tab Excel export, JSON backup/restore via Settings modal | 2026-03-10 |
-| FEAT-002 | medium | open | Cross-device sync | Replace localStorage with cloud storage or simple backend | 2026-03-10 |
-| FEAT-003 | low | open | Print-friendly / PDF export view | Clean layout for sharing with builder or partner | 2026-03-10 |
-| FEAT-004 | medium | done | Add/edit/delete spec items in UI | Part 1: add via modal. Part 2: edit (pre-filled modal) + delete (with confirmation) on each row | 2026-03-10 |
-| FEAT-005 | medium | done | Add/edit/delete tenders in UI | Add/delete tenders, rename builder, edit per-item pricing/included/notes inline | 2026-03-10 |
-| FEAT-006 | low | open | Add/edit/delete scenarios in UI | Can currently edit items within scenarios but not create new ones | 2026-03-10 |
-| FEAT-007 | medium | open | Custom milestone editing | Allow user to change milestone names, dates, and percentages | 2026-03-10 |
-| FEAT-008 | low | open | Photo/receipt attachment per item | Link images to owner-supplied items or milestone payments | 2026-03-10 |
 | FEAT-009 | high | open | Mobile responsive polish | Test and fix layout on small screens | 2026-03-10 |
-| FEAT-010 | high | done | Add new owner-supplied items manually via UI | Must be able to add items not in the spec doc (e.g. discovered during build) | 2026-03-10 |
-| FEAT-011 | critical | done | Upload zones on Tender Comparison tab | Two areas: one for spec document upload, one for builder tender uploads. Accepts PDF/images. | 2026-03-10 |
-| FEAT-012 | critical | done | AI parsing of spec document | Parses spec, extracts items with location-based estimates, shows merge confirmation modal | 2026-03-10 |
-| FEAT-013 | critical | done | AI parsing of builder tenders | Maps tender items to spec, extracts pricing, flags deviations/omissions | 2026-03-10 |
-| FEAT-014 | high | done | Multiple options per owner-supplied item | Each item (e.g. "kitchen worktop") should support 2-3 supplier/price options. User selects which option is active — only the active one feeds into budget. Example: Option A (Howdens laminate £2,400), Option B (quartz £4,100), Option C (dekton £6,800). | 2026-03-10 |
-| FEAT-015 | high | done | Auto-populate owner-supplied items from spec | AI extracts owner-supplied items with low/mid/high estimates during spec parse | 2026-03-10 |
-| FEAT-016 | high | done | Partial spec merge with confirmation | Review modal to select/overwrite/skip AI-parsed items instead of full replace | 2026-03-10 |
-| FEAT-017 | high | done | Location-based cost estimates | Spec items get eLow/eMid/eHigh tuned to user's area, dashboard shows tier breakdown | 2026-03-10 |
-| FEAT-018 | medium | done | Flexible quote selection with tiers | Owner-supplied options tagged Budget/Mid/Premium, AI Estimate tender auto-generated | 2026-03-10 |
-| FEAT-019 | high | done | Multi-project support | Create, switch, delete, rename projects. Per-project data isolation. Auto-migration from old format. | 2026-03-10 |
-| FEAT-020 | high | done | Component breakdown for spec items and tenders | Part 1: data model + AI parsing + merge modal label. Part 2: expandable sub-rows in comparison matrix with tender component comparison. | 2026-03-10 |
-| FEAT-021 | high | done | Two-mode spec parsing, selective estimation & manual entry | Part 1: two parse buttons, manual status, conditional AI Estimate tender. Part 2: per-item, per-section, and bulk estimation with progress. Part 3: inline manual estimate editing, clear button. | 2026-03-10 |
-| FEAT-024 | high | done | Budget input/editing | Editable budget and contingency % inputs on Dashboard. | 2026-03-10 |
-| FEAT-025 | high | done | User authentication and session persistence | Supabase Auth + cloud storage, shared auth with Homegrown app, localStorage migration, sync status indicator | 2026-03-10 |
-| FEAT-026 | medium | open | Link to Homegrown app | Shared login page with home screen showing both Renovation Tracker and Homegrown app options. | 2026-03-10 |
-| FEAT-027 | high | open | Minimise AI token costs | Investigate: batching, caching parsed results, using Haiku for extraction and Sonnet only for estimates, reducing prompt size, client-side caching of AI responses. | 2026-03-10 |
-| FEAT-028 | medium | open | Google Docs and MS Word (.docx) upload support | Currently only PDF and images accepted. Add client-side text extraction from .docx files and Google Docs links. | 2026-03-10 |
-| FEAT-029 | medium | open | Paywall for AI features | Make AI-enabled functionality paid so each user covers their own API costs. Investigate: Stripe integration, token tracking per user, usage limits on free tier. | 2026-03-10 |
+| FEAT-027 | high | open | Minimise AI token costs | Batching, caching, Haiku for extraction, reducing prompt size | 2026-03-10 |
+| FEAT-007 | medium | open | Custom milestone editing | Allow user to change milestone names, dates, and percentages | 2026-03-10 |
+| FEAT-006 | medium | open | Add/edit/delete scenarios in UI | Can currently edit items within scenarios but not create new ones | 2026-03-10 |
+| FEAT-026 | medium | open | Link to Homegrown app | Shared home screen showing both Renovation Tracker and Homegrown app options | 2026-03-10 |
+| FEAT-028 | medium | open | Google Docs and .docx upload support | Client-side text extraction from .docx files and Google Docs links | 2026-03-10 |
+| FEAT-029 | medium | open | Paywall for AI features | Stripe integration, token tracking per user, usage limits on free tier | 2026-03-10 |
+| FEAT-003 | low | open | Print-friendly / PDF export view | Clean layout for sharing with builder or partner | 2026-03-10 |
+| FEAT-008 | low | open | Photo/receipt attachment per item | Link images to owner-supplied items or milestone payments | 2026-03-10 |
 
 ## Closed / Done
 
@@ -236,28 +212,31 @@
 |----|-------------|------------|-------------|
 | BUG-001 | Owner Supplied tab has no way to input amounts or add items | Fixed — add items UI and editable fields added in v1.1.0 | 2026-03-10 |
 | BUG-002 | React error #310 — hooks called after conditional return | Fixed — all hooks moved before early return, reverted broken implementation and re-implemented cleanly | 2026-03-10 |
-| FEAT-010 | Add new owner-supplied items manually via UI | Add item form on Owner Supplied tab | 2026-03-10 |
-| FEAT-011 | Upload zones on Tender Comparison tab | Drag-and-drop upload for spec doc + builder tenders with file preview | 2026-03-10 |
-| FEAT-014 | Multiple options per owner-supplied item | Each item supports multiple supplier/price options with active selection toggle | 2026-03-10 |
-| FEAT-012 | AI parsing of spec document | Client-side Anthropic API parses spec with location-based estimates, merge confirmation modal | 2026-03-10 |
-| FEAT-013 | AI parsing of builder tenders | Maps tender items to spec IDs, extracts pricing, flags deviations/omissions | 2026-03-10 |
-| FEAT-015 | Auto-populate owner-supplied items from spec | AI extracts owner-supplied items with low/mid/high tier estimates | 2026-03-10 |
-| FEAT-016 | Partial spec merge with confirmation | Review modal to add/overwrite/skip parsed items, no destructive full-replace | 2026-03-10 |
-| FEAT-017 | Location-based cost estimates | eLow/eMid/eHigh per spec item tuned to user's area, dashboard tier breakdown | 2026-03-10 |
-| FEAT-018 | Flexible quote selection with tiers | Owner-supplied options tagged Budget/Mid/Premium, AI Estimate tender auto-generated | 2026-03-10 |
-| FEAT-004 | Add/edit/delete spec items in UI | Part 1: add via modal. Part 2: edit + delete with confirmation on each comparison matrix row | 2026-03-10 |
-| FEAT-005 | Add/edit/delete tenders in UI | Add/delete tenders, rename builder inline, edit per-item pricing/included/notes inline in matrix | 2026-03-10 |
-| FEAT-019 | Multi-project support | Create, switch, delete, rename projects. Per-project localStorage. Auto-migration. Empty state handling. | 2026-03-10 |
-| BUG-003 | JSON parse failed on spec/tender AI responses | Robust extractJSON helper: strips code fences, trims preamble/postamble, regex fallback for outermost JSON, console logging on failure. Strengthened system prompts to explicitly forbid markdown formatting. | 2026-03-10 |
-| FEAT-020 | Component breakdown for spec items and tenders | Part 1: data model + AI parsing + merge modal label. Part 2: expandable sub-rows in comparison matrix with chevron toggle, tender component parallel display, components total row. | 2026-03-10 |
-| BUG-004 | JSON parse fails on large AI responses | Increased max_tokens 4096→16384, added repairTruncatedJSON helper (unclosed string handling, bracket closing), stop_reason truncation detection, clear console logging. | 2026-03-10 |
-| FEAT-021 | Two-mode spec parsing, selective estimation & manual entry | Part 1: extract-only vs with-estimates modes. Part 2: per-item ✦ button, per-section Est, bulk Get All Estimates with progress. Part 3: inline manual estimate editing (click Range column), clear estimates button. | 2026-03-10 |
-| BUG-005 | Extract Items button misleadingly showed estimates | Merge modal shows "No estimates" for extract-only items. Upload zone desc neutralised. AI user message differentiated. Hint text under buttons. | 2026-03-10 |
-| BUG-006 | Collapsible categories not working | Changed CATS.map() to CATS.flatMap() with return [] instead of return null — gives React a flat array for proper reconciliation. | 2026-03-10 |
-| FEAT-024 | Budget & contingency editing | Inline editable budget (£) and contingency (%) inputs on Dashboard. Production React builds. DEBUG-gated console output. | 2026-03-10 |
-| FEAT-001 | Excel & JSON export/import | Multi-tab Excel (.xlsx) export with 5 tabs, JSON backup/restore, Import with validation — all in Settings modal | 2026-03-10 |
-| BUG-008 | Budget input not editable | Moved budget/contingency editing from tier card header into the Total Budget summary card where users expect it. | 2026-03-10 |
-| FEAT-025 | User authentication and cloud storage | Supabase Auth (shared with Homegrown app), cloud persistence in reno_projects table with RLS, localStorage cache/offline fallback, debounced sync, automatic migration, sync status indicator. v2.0.0. | 2026-03-10 |
+| BUG-003 | JSON parse failed on spec/tender AI responses | Robust extractJSON helper: strips code fences, trims preamble/postamble, regex fallback for outermost JSON, console logging on failure | 2026-03-10 |
+| BUG-004 | JSON parse fails on large AI responses | Increased max_tokens 4096→16384, added repairTruncatedJSON helper, stop_reason truncation detection | 2026-03-10 |
+| BUG-005 | Extract Items button misleadingly showed estimates | Merge modal shows "No estimates" for extract-only items. Upload zone desc neutralised. AI user message differentiated | 2026-03-10 |
+| BUG-006 | Collapsible categories not working | Changed CATS.map() to CATS.flatMap() — gives React a flat array for proper reconciliation | 2026-03-10 |
+| BUG-008 | Budget input not editable | Moved budget/contingency editing into the Total Budget summary card | 2026-03-10 |
+| FEAT-001 | Excel & JSON export/import | Multi-tab Excel (.xlsx) export with 5 tabs, JSON backup/restore — all in Settings modal (v1.7.1) | 2026-03-10 |
+| FEAT-002 | Cross-device sync | Superseded by FEAT-025 (Supabase cloud storage) | 2026-03-10 |
+| FEAT-004 | Add/edit/delete spec items in UI | Add via modal, edit + delete with confirmation on each comparison matrix row (v1.4.0) | 2026-03-10 |
+| FEAT-005 | Add/edit/delete tenders in UI | Add/delete tenders, rename builder inline, edit per-item pricing/included/notes (v1.4.0) | 2026-03-10 |
+| FEAT-010 | Add new owner-supplied items manually via UI | Add item form on Owner Supplied tab (v1.1.0) | 2026-03-10 |
+| FEAT-011 | Upload zones on Tender Comparison tab | Drag-and-drop upload for spec doc + builder tenders with file preview (v1.1.0) | 2026-03-10 |
+| FEAT-012 | AI parsing of spec document | Client-side Anthropic API parses spec with location-based estimates, merge confirmation modal (v1.3.0) | 2026-03-10 |
+| FEAT-013 | AI parsing of builder tenders | Maps tender items to spec IDs, extracts pricing, flags deviations/omissions (v1.3.0) | 2026-03-10 |
+| FEAT-014 | Multiple options per owner-supplied item | Each item supports multiple supplier/price options with active selection toggle (v1.1.0) | 2026-03-10 |
+| FEAT-015 | Auto-populate owner-supplied items from spec | AI extracts owner-supplied items with low/mid/high tier estimates (v1.3.0) | 2026-03-10 |
+| FEAT-016 | Partial spec merge with confirmation | Review modal to add/overwrite/skip parsed items, no destructive full-replace (v1.3.0) | 2026-03-10 |
+| FEAT-017 | Location-based cost estimates | eLow/eMid/eHigh per spec item tuned to user's area, dashboard tier breakdown (v1.3.0) | 2026-03-10 |
+| FEAT-018 | Flexible quote selection with tiers | Owner-supplied options tagged Budget/Mid/Premium, AI Estimate tender auto-generated (v1.3.0) | 2026-03-10 |
+| FEAT-019 | Multi-project support | Create, switch, delete, rename projects. Per-project localStorage. Auto-migration (v1.5.0) | 2026-03-10 |
+| FEAT-020 | Component breakdown for spec items and tenders | Data model + AI parsing + expandable sub-rows in comparison matrix (v1.5.0) | 2026-03-10 |
+| FEAT-021 | Two-mode spec parsing, selective estimation & manual entry | Extract-only vs with-estimates, per-item/section/bulk estimation, inline manual editing (v1.6.0) | 2026-03-10 |
+| FEAT-022 | Collapsible category groups in tender comparison matrix | Category headers with chevron toggle, expand/collapse all, subtotals per category (v1.6.0) | 2026-03-10 |
+| FEAT-023 | Spec validation / audit view | AI audit of extraction against spec documents, add missing items, fix qty mismatches (v1.6.0) | 2026-03-10 |
+| FEAT-024 | Budget & contingency editing | Inline editable budget (£) and contingency (%) inputs on Dashboard (v1.7.0) | 2026-03-10 |
+| FEAT-025 | User authentication and cloud storage | Supabase Auth (shared with Homegrown app), cloud persistence, localStorage cache/offline fallback, debounced sync (v2.0.0) | 2026-03-10 |
 
 ---
 
@@ -303,6 +282,7 @@ Budget calculations should use the `active` option's price. Scenario modelling s
 
 ## Notes
 
-- When real spec and tender data is loaded, update version to 1.1.0
-- Any breaking change to the localStorage data model should increment to 2.0.0 and include migration logic
-- FEAT-011/012/013 are the highest priority — they transform the app from a manual tracker to an AI-powered tool
+- Supabase project ID: `ddokpzadckyyzolopkai` (shared with Homegrown app)
+- Supabase anon key is embedded in index.html — safe to expose (RLS protects data)
+- API key (`reno-tracker-ak`) is per-device in localStorage, never synced to cloud
+- Any new tables should use RLS and reference `auth.users(id)` for the same shared auth
