@@ -11,6 +11,18 @@
 
 ## Changelog
 
+### v1.5.0 — 2026-03-10 (Multi-Project Support)
+
+- **FEAT-019:** Multi-project support — create, switch, delete, and rename independent renovation projects
+- **Data layer:** New localStorage keys: `reno-tracker-projects` (project metadata array), `reno-tracker-active-project` (active ID), `reno-tracker-proj-{id}` (per-project data). Auto-migration from old `reno-tracker-v2` single-key format.
+- **Project switcher:** Dropdown in header lists all projects with name, created date, and "Demo" badge. Active project highlighted with checkmark. Chevron rotates on open. Transparent overlay for outside-click closing.
+- **Create projects:** "New Project" button opens modal with name input and "Start with demo data" checkbox. Blank projects start with empty arrays for all entities.
+- **Delete projects:** ✕ button on non-demo projects with confirmation dialog. Cannot delete the demo project or the last remaining project. Auto-switches to another project after deletion.
+- **Rename projects:** Pencil icon next to project name in header enables inline rename. Saves on Enter/blur, updates both metadata array and project data.
+- **Empty states:** All tabs render gracefully for blank projects — Dashboard shows £0 with safe division-by-zero guards, other tabs show "No items yet" messages.
+- **Reset behaviour:** Reset button now respects project type — demo projects reset to demo data, blank projects reset to empty data.
+- **API key:** Stored globally (`reno-tracker-ak`), shared across all projects. Location is per-project.
+
 ### v1.4.0 — 2026-03-10 (Add/Edit/Delete Spec Items & Tenders)
 
 - **FEAT-004:** Full CRUD for spec items — add via modal (category, item, unit, qty, notes, estimate range), edit via pre-filled modal, delete with confirmation that cascades to all tenders and scenarios
@@ -85,6 +97,7 @@
 | FEAT-016 | high | done | Partial spec merge with confirmation | Review modal to select/overwrite/skip AI-parsed items instead of full replace | 2026-03-10 |
 | FEAT-017 | high | done | Location-based cost estimates | Spec items get eLow/eMid/eHigh tuned to user's area, dashboard shows tier breakdown | 2026-03-10 |
 | FEAT-018 | medium | done | Flexible quote selection with tiers | Owner-supplied options tagged Budget/Mid/Premium, AI Estimate tender auto-generated | 2026-03-10 |
+| FEAT-019 | high | done | Multi-project support | Create, switch, delete, rename projects. Per-project data isolation. Auto-migration from old format. | 2026-03-10 |
 
 ## Closed / Done
 
@@ -103,6 +116,7 @@
 | FEAT-018 | Flexible quote selection with tiers | Owner-supplied options tagged Budget/Mid/Premium, AI Estimate tender auto-generated | 2026-03-10 |
 | FEAT-004 | Add/edit/delete spec items in UI | Part 1: add via modal. Part 2: edit + delete with confirmation on each comparison matrix row | 2026-03-10 |
 | FEAT-005 | Add/edit/delete tenders in UI | Add/delete tenders, rename builder inline, edit per-item pricing/included/notes inline in matrix | 2026-03-10 |
+| FEAT-019 | Multi-project support | Create, switch, delete, rename projects. Per-project localStorage. Auto-migration. Empty state handling. | 2026-03-10 |
 
 ---
 
