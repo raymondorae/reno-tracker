@@ -11,6 +11,18 @@
 
 ## Changelog
 
+### FEAT-023 — done (Spec validation / audit)
+
+- "Audit Extraction" button in the spec document upload card — enabled only when spec items AND spec documents both exist.
+- Sends uploaded spec document(s) and current extracted items JSON to Anthropic API with an audit-specific prompt.
+- AI checks for: missing items, double-counted items, misallocated categories, and quantity mismatches.
+- Results displayed in a modal with colour-coded sections: red for missing/qty issues, amber for double-counted/misallocated.
+- Missing items: "+ Add" button auto-creates the spec item with suggested category, status "manual", cascades to tenders/scenarios.
+- Quantity mismatches: "Update" button corrects the qty to match the spec value.
+- Buttons change to "Added" / "Updated" (green) after actioning, using reactive data checks.
+- Clean state: green summary card with checkmark when no issues found.
+- Summary assessment shown at the top of the modal.
+
 ### FEAT-022 — done (Collapsible category groups in tender comparison matrix)
 
 - Spec items in the comparison matrix are now grouped by category with collapsible header rows.

@@ -86,6 +86,7 @@ const[estimatingItems,setEstimatingItems]=useState(new Set());const[estimateErro
 const[editEst,setEditEst]=useState(null);
 const[collapsedCats,setCollapsedCats]=useState(new Set(CATS));
 function toggleCat(cat){setCollapsedCats(prev=>{const n=new Set(prev);n.has(cat)?n.delete(cat):n.add(cat);return n})}
+const[auditResult,setAuditResult]=useState(null);const[auditing,setAuditing]=useState(false);
 
 function switchProject(pid){if(pid===activeProject){setShowProjMenu(false);return}
 localStorage.setItem(APK,pid);setActiveProject(pid);
@@ -233,6 +234,28 @@ function updateEstimate(sid,eLow,eMid,eHigh){const l=Number(eLow)||0,m=Number(eM
 
 function clearEstimate(sid){const ns=data.specItems.map(s=>s.id===sid?{...s,eLow:null,eMid:null,eHigh:null,components:[],status:"manual"}:s);save({...data,specItems:ns})}
 
+/* ── SPEC AUDIT ── */
+async function validateSpec(){if(!ak){setShowSet(true);return}if(!data.specDocuments.length||!data.specItems.length)return;
+setAuditing(true);setPm("Validating extraction against spec...");try{
+const content=data.specDocuments.map(d=>d.type==="application/pdf"?{type:"document",source:{type:"base64",media_type:"application/pdf",data:d.data.split(",")[1]}}:{type:"image",source:{type:"base64",media_type:d.type,data:d.data.split(",")[1]}});
+const specJson=JSON.stringify(data.specItems.map(s=>({id:s.id,category:s.category,item:s.item,unit:s.unit,qty:s.qty,specNotes:s.specNotes})));
+content.push({type:"text",text:"Audit this extraction. Here are the currently extracted items:\n"+specJson});
+const sys=`You are auditing a renovation spec extraction. The user uploaded their spec document and extracted a list of items. Compare the original spec document against the extracted items list.
+Check for:
+1. MISSING items — things in the spec document NOT in the extracted list
+2. DOUBLE-COUNTED items — same work appearing in multiple extracted items
+3. MISALLOCATED items — things assigned to the wrong category
+4. QUANTITY MISMATCHES — where extracted qty differs from spec
+CRITICAL: Your entire response MUST be a single valid JSON object. No markdown. Start with { end with }.
+Format: {"missing":[{"description":"...","location":"page/section in spec","suggestedCategory":"..."}],"doubleCounted":[{"item1Id":"...","item2Id":"...","description":"what is duplicated","recommendation":"..."}],"misallocated":[{"itemId":"...","issue":"...","recommendation":"..."}],"qtyMismatches":[{"itemId":"...","specQty":"...","extractedQty":"...","location":"..."}],"summary":"Overall assessment"}
+Use the exact item IDs from the extracted list when referencing existing items. Return empty arrays [] for categories with no issues.`;
+const{text}=await aiCall(ak,[{role:"user",content}],sys);setAuditResult(extractJSON(text));setPm("")}catch(e){setPm("Error: "+e.message)}setAuditing(false)}
+
+function addAuditItem(desc,cat){const id="spec-"+Date.now()+"-"+Math.floor(Math.random()*1000);const ni={id,category:cat||"Other",item:desc,unit:"item",qty:1,specNotes:"Added from audit",status:"manual",eLow:null,eMid:null,eHigh:null,components:[]};
+const ns=[...data.specItems,ni];const nt=data.tenders.map(t=>({...t,items:{...t.items,[id]:{price:0,included:false,notes:""}}}));const nsc=data.scenarios.map(s=>({...s,itemsIncluded:[...s.itemsIncluded,id]}));save({...data,specItems:ns,tenders:nt,scenarios:nsc})}
+
+function updateAuditQty(itemId,newQty){const q=parseInt(newQty,10)||1;const ns=data.specItems.map(s=>String(s.id)===String(itemId)?{...s,qty:q}:s);save({...data,specItems:ns})}
+
 /* ── ADD SPEC ITEM ── */
 function saveSpecItem(){if(!addSpec||!addSpec.item.trim())return;
 if(addSpec.editId){const ns=data.specItems.map(s=>s.id===addSpec.editId?{...s,category:addSpec.category,item:addSpec.item.trim(),unit:addSpec.unit.trim()||"item",qty:Number(addSpec.qty)||1,specNotes:addSpec.specNotes.trim(),eLow:Number(addSpec.eLow)||0,eMid:Number(addSpec.eMid)||0,eHigh:Number(addSpec.eHigh)||0}:s);save({...data,specItems:ns});setAddSpec(null);return}
@@ -303,6 +326,19 @@ return<div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-c
 <button onClick={applyMerge} className="px-4 py-2 bg-amber-600 text-zinc-950 rounded text-sm font-medium hover:bg-amber-500">Apply Selected Items</button></div>
 </div></div>};
 
+/* ── AUDIT RESULTS MODAL ── */
+const renderAuditModal=()=>{if(!auditResult)return null;const ar=auditResult;const ml=ar.missing||[];const dc=ar.doubleCounted||[];const ma=ar.misallocated||[];const qm=ar.qtyMismatches||[];const total=ml.length+dc.length+ma.length+qm.length;const clean=total===0;
+return<div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 overflow-y-auto"><div className="bg-zinc-900 border border-zinc-700 rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e=>e.stopPropagation()}>
+<h3 className="text-lg font-bold text-zinc-100 mb-2">Spec Validation Results</h3>
+<div className={"rounded-lg p-3 mb-4 text-sm "+(clean?"bg-emerald-950/30 border border-emerald-800/40 text-emerald-300":"bg-amber-950/30 border border-amber-800/40 text-amber-300")}>{ar.summary||"Validation complete."}</div>
+{clean&&<div className="text-center py-6"><div className="text-emerald-400 text-3xl mb-2">✓</div><div className="text-zinc-300 font-medium">All items verified</div><div className="text-xs text-zinc-500 mt-1">No missing items, duplicates, or mismatches found.</div></div>}
+{ml.length>0&&<div className="mb-4"><div className="text-xs text-red-400 uppercase tracking-wider mb-2 flex items-center gap-1.5"><Xi/>Missing Items ({ml.length})</div><div className="space-y-2">{ml.map((m,i)=>{const exists=data.specItems.some(s=>s.item===m.description);return<div key={i} className="flex items-center gap-3 bg-red-950/20 border border-red-900/30 rounded px-3 py-2"><div className="flex-1"><div className="text-sm text-zinc-300">{m.description}</div><div className="text-xs text-zinc-500">{m.location}{m.suggestedCategory?" · "+m.suggestedCategory:""}</div></div><button onClick={()=>addAuditItem(m.description,m.suggestedCategory)} disabled={exists} className={"text-xs px-2 py-1 rounded flex-shrink-0 "+(exists?"bg-emerald-900/30 text-emerald-400":"bg-zinc-800 hover:bg-zinc-700 text-zinc-300")}>{exists?"Added":"+ Add"}</button></div>})}</div></div>}
+{dc.length>0&&<div className="mb-4"><div className="text-xs text-amber-400 uppercase tracking-wider mb-2 flex items-center gap-1.5"><Wi/>Double-Counted ({dc.length})</div><div className="space-y-2">{dc.map((d,i)=>{const i1=data.specItems.find(s=>String(s.id)===String(d.item1Id));const i2=data.specItems.find(s=>String(s.id)===String(d.item2Id));return<div key={i} className="bg-amber-950/20 border border-amber-900/30 rounded px-3 py-2"><div className="text-sm text-zinc-300">{d.description}</div><div className="text-xs text-zinc-500 mt-1">{i1?i1.item:"ID "+d.item1Id} ↔ {i2?i2.item:"ID "+d.item2Id}</div><div className="text-xs text-amber-400/70 mt-1">{d.recommendation}</div></div>})}</div></div>}
+{ma.length>0&&<div className="mb-4"><div className="text-xs text-amber-400 uppercase tracking-wider mb-2 flex items-center gap-1.5"><Wi/>Misallocated ({ma.length})</div><div className="space-y-2">{ma.map((m,i)=>{const it=data.specItems.find(s=>String(s.id)===String(m.itemId));return<div key={i} className="bg-amber-950/20 border border-amber-900/30 rounded px-3 py-2"><div className="text-sm text-zinc-300">{it?it.item:"ID "+m.itemId}</div><div className="text-xs text-zinc-500 mt-1">{m.issue}</div><div className="text-xs text-amber-400/70 mt-1">{m.recommendation}</div></div>})}</div></div>}
+{qm.length>0&&<div className="mb-4"><div className="text-xs text-red-400 uppercase tracking-wider mb-2 flex items-center gap-1.5"><Xi/>Quantity Mismatches ({qm.length})</div><div className="space-y-2">{qm.map((q,i)=>{const it=data.specItems.find(s=>String(s.id)===String(q.itemId));const updated=it&&it.qty===parseInt(q.specQty,10);return<div key={i} className="flex items-center gap-3 bg-red-950/20 border border-red-900/30 rounded px-3 py-2"><div className="flex-1"><div className="text-sm text-zinc-300">{it?it.item:"ID "+q.itemId}</div><div className="text-xs text-zinc-500 mt-1">Spec: {q.specQty} · Extracted: {q.extractedQty}{q.location?" · "+q.location:""}</div></div><button onClick={()=>updateAuditQty(q.itemId,q.specQty)} disabled={updated} className={"text-xs px-2 py-1 rounded flex-shrink-0 "+(updated?"bg-emerald-900/30 text-emerald-400":"bg-zinc-800 hover:bg-zinc-700 text-zinc-300")}>{updated?"Updated":"Update"}</button></div>})}</div></div>}
+<div className="flex justify-end mt-4"><button onClick={()=>setAuditResult(null)} className="px-4 py-2 bg-zinc-800 text-zinc-300 rounded text-sm hover:bg-zinc-700">Close</button></div>
+</div></div>};
+
 /* ── RENDER SECTIONS ── */
 const rDash=()=><div className="space-y-6">
 <Cd cn="p-4"><div className="flex items-center justify-between mb-3"><span className="text-xs text-zinc-500 uppercase tracking-wider">Estimated Cost by Tier</span><div className="flex items-center gap-2"><span className="text-xs text-zinc-500">Area:</span><input value={data.location||""} onChange={e=>save({...data,location:e.target.value})} className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-300 w-32" placeholder="e.g. Surrey"/></div></div>
@@ -318,7 +354,7 @@ const rComp=()=><div className="space-y-4">
 <div className="grid md:grid-cols-2 gap-4">
 <Cd cn="p-4"><div className="text-xs text-zinc-500 uppercase mb-2">Spec Document</div><div className="text-xs text-zinc-600 mb-3">Upload complete specs or individual sections — you'll choose what to add/overwrite.</div>
 <UZ label="Upload Spec (full or partial)" desc="PDF or images — extract items, then estimate separately" files={data.specDocuments} onAdd={f=>save({...data,specDocuments:[...data.specDocuments,f]})} onRemove={i=>save({...data,specDocuments:data.specDocuments.filter((_,j)=>j!==i)})}/>
-{data.specDocuments.length>0&&<div className="mt-3 space-y-2"><button onClick={()=>parseSpec(false)} disabled={parsing} className={"w-full py-2 rounded text-sm font-medium "+(parsing?"bg-zinc-700 text-zinc-400":"bg-amber-600 hover:bg-amber-500 text-zinc-950")}>{parsing?"Parsing...":"Extract Items from Spec"}</button><div className="text-xs text-zinc-600 text-center -mt-1">Fast — items only, no cost estimates</div><button onClick={()=>parseSpec(true)} disabled={parsing} className={"w-full py-1.5 rounded text-xs font-medium "+(parsing?"bg-zinc-700 text-zinc-400":"bg-zinc-700 hover:bg-zinc-600 text-zinc-300 border border-zinc-600")}>{parsing?"Parsing...":"Extract with AI Estimates — "+(data.location||"your area")}</button><div className="text-xs text-zinc-600 text-center -mt-1">Slower — includes eLow/eMid/eHigh + components</div></div>}</Cd>
+{data.specDocuments.length>0&&<div className="mt-3 space-y-2"><button onClick={()=>parseSpec(false)} disabled={parsing} className={"w-full py-2 rounded text-sm font-medium "+(parsing?"bg-zinc-700 text-zinc-400":"bg-amber-600 hover:bg-amber-500 text-zinc-950")}>{parsing?"Parsing...":"Extract Items from Spec"}</button><div className="text-xs text-zinc-600 text-center -mt-1">Fast — items only, no cost estimates</div><button onClick={()=>parseSpec(true)} disabled={parsing} className={"w-full py-1.5 rounded text-xs font-medium "+(parsing?"bg-zinc-700 text-zinc-400":"bg-zinc-700 hover:bg-zinc-600 text-zinc-300 border border-zinc-600")}>{parsing?"Parsing...":"Extract with AI Estimates — "+(data.location||"your area")}</button><div className="text-xs text-zinc-600 text-center -mt-1">Slower — includes eLow/eMid/eHigh + components</div></div>}{data.specItems.length>0&&data.specDocuments.length>0&&<button onClick={validateSpec} disabled={auditing||parsing} className={"mt-2 w-full py-1.5 rounded text-xs font-medium "+(auditing?"bg-zinc-700 text-zinc-400":"bg-zinc-800 hover:bg-zinc-700 text-zinc-400 border border-zinc-700")}>{auditing?"Validating...":"Audit Extraction"}</button>}</Cd>
 <Cd cn="p-4"><div className="text-xs text-zinc-500 uppercase mb-3">Builder Tenders</div><div className="flex gap-2 mb-3"><input type="text" value={tbn} onChange={e=>setTbn(e.target.value)} placeholder="Builder name" className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-300 placeholder-zinc-600"/></div>
 <UZ label="Upload Tender" desc={tbn?"For: "+tbn:"Enter name above"} files={data.tenderDocuments} onAdd={f=>{if(!tbn.trim()){alert("Enter name first");return}save({...data,tenderDocuments:[...data.tenderDocuments,{...f,builderName:tbn.trim()}]})}} onRemove={i=>save({...data,tenderDocuments:data.tenderDocuments.filter((_,j)=>j!==i)})}/>
 {data.tenderDocuments.length>0&&<button onClick={parseTender} disabled={parsing} className={"mt-3 w-full py-2 rounded text-sm font-medium "+(parsing?"bg-zinc-700 text-zinc-400":"bg-amber-600 hover:bg-amber-500 text-zinc-950")}>{parsing?"Parsing...":"Parse Tender — map to spec"}</button>}</Cd></div>
@@ -382,6 +418,7 @@ const tabs=[{id:"dashboard",l:"Dashboard"},{id:"comparison",l:"Tenders",c:tf.len
 
 return<div className="min-h-screen bg-zinc-950 text-zinc-300">
 {renderMergeModal()}
+{renderAuditModal()}
 {renderAddSpecModal()}
 {renderAddTenderModal()}
 {newProj&&<div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={()=>setNewProj(null)}><div className="bg-zinc-900 border border-zinc-700 rounded-lg p-6 max-w-md w-full" onClick={e=>e.stopPropagation()}>
