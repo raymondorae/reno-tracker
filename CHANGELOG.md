@@ -11,6 +11,21 @@
 
 ## Changelog
 
+### v1.7.1 — 2026-03-10 (Excel & JSON Export)
+
+- **FEAT-001:** Data export and backup — Excel (.xlsx) multi-tab export with Dashboard, Tenders, Milestones, Owner Supplied, and Scenarios tabs. JSON backup export and import for device transfer. All accessible from Settings modal.
+- SheetJS (xlsx) CDN added for client-side Excel generation.
+- Excel export includes currency formatting (£#,##0) and column width hints across all tabs.
+- JSON import validates structure, patches missing fields, and replaces project data with confirmation.
+
+### FEAT-001 — done (Excel & JSON Export)
+
+- **Export to Excel:** Multi-tab .xlsx workbook generated client-side via SheetJS. Tab 1 (Dashboard): project summary, budget overview, tier estimates. Tab 2 (Tenders): full comparison matrix grouped by category with all tender prices. Tab 3 (Milestones): payment schedule with amounts and status. Tab 4 (Owner Supplied): all items with all options (max-options column groups). Tab 5 (Scenarios): each scenario with included/excluded items and budget status.
+- **Export JSON:** Full project data exported as formatted JSON for backup and device transfer.
+- **Import JSON:** File picker in Settings modal. Validates that the file contains a `specItems` array. Warns user that import replaces all data. Patches missing `specDocuments`, `tenderDocuments`, and `location` fields for safety.
+- **UI:** "Data Export & Backup" section in Settings modal with three buttons: "Export to Excel" (amber), "Export JSON" (zinc), "Import JSON" (zinc + hidden file input).
+- **Filename:** Sanitised project name + date, e.g. `My-Renovation-2026-03-10.xlsx`.
+
 ### BUG-008 — done (Budget input not editable)
 
 - **Root cause:** v1.7.0 placed budget/contingency inputs in the small tier card header, but users naturally click the big prominent "TOTAL BUDGET £0" summary card which was a static `<div>`, not an input.
@@ -164,7 +179,7 @@
 
 | ID | Priority | Status | Description | Notes | Date Logged |
 |----|----------|--------|-------------|-------|-------------|
-| FEAT-001 | medium | open | Data export/import as JSON | Allow backup and transfer between devices | 2026-03-10 |
+| FEAT-001 | medium | done | Excel & JSON export/import | Multi-tab Excel export, JSON backup/restore via Settings modal | 2026-03-10 |
 | FEAT-002 | medium | open | Cross-device sync | Replace localStorage with cloud storage or simple backend | 2026-03-10 |
 | FEAT-003 | low | open | Print-friendly / PDF export view | Clean layout for sharing with builder or partner | 2026-03-10 |
 | FEAT-004 | medium | done | Add/edit/delete spec items in UI | Part 1: add via modal. Part 2: edit (pre-filled modal) + delete (with confirmation) on each row | 2026-03-10 |
@@ -217,6 +232,7 @@
 | BUG-005 | Extract Items button misleadingly showed estimates | Merge modal shows "No estimates" for extract-only items. Upload zone desc neutralised. AI user message differentiated. Hint text under buttons. | 2026-03-10 |
 | BUG-006 | Collapsible categories not working | Changed CATS.map() to CATS.flatMap() with return [] instead of return null — gives React a flat array for proper reconciliation. | 2026-03-10 |
 | FEAT-024 | Budget & contingency editing | Inline editable budget (£) and contingency (%) inputs on Dashboard. Production React builds. DEBUG-gated console output. | 2026-03-10 |
+| FEAT-001 | Excel & JSON export/import | Multi-tab Excel (.xlsx) export with 5 tabs, JSON backup/restore, Import with validation — all in Settings modal | 2026-03-10 |
 | BUG-008 | Budget input not editable | Moved budget/contingency editing from tier card header into the Total Budget summary card where users expect it. | 2026-03-10 |
 
 ---

@@ -42,6 +42,7 @@ Single-file architecture — all React components, default data, and styling liv
 | Owner Supplied | Live (v3) | Multi-option with tier tags (Budget/Mid/Premium), add real quotes, add new items, ordered/delivered toggles |
 | AI Integration | Live (v2) | Two-mode spec parsing (extract-only or with AI estimates), selective per-item/section/bulk estimation, manual estimate entry, tender parsing, partial merge with confirmation modal, AI Estimate tender auto-generation |
 | Multi-Project | Live | Create, switch, delete, rename projects. Per-project data isolation. Auto-migration from old format. |
+| Data Export | Live | Excel (.xlsx) multi-tab export, JSON backup/restore via Settings modal |
 | Scenarios | Live | What-if modelling, toggle items per scenario, budget impact calculation |
 
 ---
@@ -101,7 +102,7 @@ This runs entirely client-side. No backend needed. User provides their own Anthr
 
 ## Current State
 
-- **Version:** 1.7.0
+- **Version:** 1.7.1
 - **Last updated:** 2026-03-10
 - **Multi-project:** Create, switch, delete, rename independent projects. Auto-migration from old single-key format. Demo project included by default. Blank projects start empty with graceful empty states across all tabs.
 - **Sample data:** 18 spec items (with eLow/eMid/eHigh estimates), 3 sample tenders, 9 milestones, 9 owner-supplied items (with Budget/Mid/Premium tiers), 4 scenarios
@@ -122,6 +123,7 @@ This runs entirely client-side. No backend needed. User provides their own Anthr
 6. ~~FEAT-019: Multi-project support~~ — Done (v1.5.0)
 7. ~~FEAT-021: Two-mode spec parsing, selective estimation, manual entry~~ — Done (v1.6.0)
 8. ~~FEAT-024: Budget & contingency editing~~ — Done (v1.7.0)
-9. FEAT-006: Add/edit/delete scenarios in UI
-10. FEAT-007: Custom milestone editing
-11. FEAT-009: Mobile responsive polish
+9. ~~FEAT-001: Excel & JSON export~~ — Done (v1.7.1)
+10. FEAT-006: Add/edit/delete scenarios in UI
+11. FEAT-007: Custom milestone editing
+12. FEAT-009: Mobile responsive polish
