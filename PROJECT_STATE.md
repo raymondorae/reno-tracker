@@ -37,10 +37,10 @@ Single-file architecture — all React components, default data, and styling liv
 | Module | Status | Description |
 |--------|--------|-------------|
 | Dashboard | Live | Budget overview, utilisation bar, tender selector, issue summary, milestone overview |
-| Tender Comparison | Live (v4) | Upload zones, AI spec parsing with merge confirmation, AI tender parsing, comparison matrix with estimate ranges, status indicators, inline cell editing, add/delete tenders, rename builders |
+| Tender Comparison | Live (v5) | Upload zones, AI spec parsing with merge confirmation, AI tender parsing, comparison matrix with estimate ranges and inline estimate editing, status indicators, inline cell editing, add/delete tenders, rename builders, clear estimates |
 | Milestones | Live | Payment schedule by contract %, status toggles (pending/partial/paid/overdue) |
 | Owner Supplied | Live (v3) | Multi-option with tier tags (Budget/Mid/Premium), add real quotes, add new items, ordered/delivered toggles |
-| AI Integration | Live | Spec parsing with location-based estimates, tender parsing, partial merge with confirmation modal, AI Estimate tender auto-generation |
+| AI Integration | Live (v2) | Two-mode spec parsing (extract-only or with AI estimates), selective per-item/section/bulk estimation, manual estimate entry, tender parsing, partial merge with confirmation modal, AI Estimate tender auto-generation |
 | Multi-Project | Live | Create, switch, delete, rename projects. Per-project data isolation. Auto-migration from old format. |
 | Scenarios | Live | What-if modelling, toggle items per scenario, budget impact calculation |
 
@@ -53,7 +53,7 @@ Multi-project architecture using three localStorage key types:
 - **`reno-tracker-projects`** — Array of project metadata: `{id, name, createdAt, isDemo}`
 - **`reno-tracker-active-project`** — ID of the currently active project
 - **`reno-tracker-proj-{id}`** — Per-project JSON data object containing:
-  - **specItems** — Line items from the spec document (id, category, item, unit, qty, specNotes, status, eLow, eMid, eHigh)
+  - **specItems** — Line items from the spec document (id, category, item, unit, qty, specNotes, status, eLow, eMid, eHigh, components[])
   - **tenders** — Builder submissions with status (sample/estimated/confirmed), per-item pricing, included flag, and notes
   - **milestones** — Payment stages with % of contract, due date, status, paid amount
   - **ownerSupplied** — Fixtures/fittings with options[] array (each option has supplier, description, price, active, tier), ordered/delivered toggles
@@ -71,10 +71,11 @@ Auto-migration from old `reno-tracker-v2` single-key format creates a "Demo Proj
 
 The app uses the Anthropic API (client-side fetch to `api.anthropic.com/v1/messages` using `claude-sonnet-4-20250514` with `anthropic-dangerous-direct-browser-access` header) to:
 
-1. **Parse spec documents** — User uploads PDF/images. AI extracts all line items with location-based eLow/eMid/eHigh estimates, splits into builder-scope and owner-supplied. Results shown in a merge confirmation modal where user selects which items to add/overwrite/skip.
-2. **Parse tender responses** — User uploads each builder's tender. AI maps items to spec IDs, extracts pricing, flags deviations and omissions.
-3. **Auto-generate AI Estimate tender** — After spec parse, an "AI Estimate" tender is created from mid-range values so the user can compare against real quotes.
-4. **Location-aware pricing** — Estimates adjusted for local labour and material costs based on user's configured area.
+1. **Parse spec documents (two modes)** — "Extract Items Only" (fast, no estimates) or "Extract with AI Estimates" (full location-based pricing with component breakdown). Results shown in merge confirmation modal.
+2. **Selective estimation** — Per-item ✦ button, per-section "✦ Est." at category headers, and bulk "✦ Get All Estimates" with progress. Manual estimate entry via clickable Range column. Clear estimates button per item.
+3. **Parse tender responses** — User uploads each builder's tender. AI maps items to spec IDs, extracts pricing, flags deviations and omissions.
+4. **Auto-generate AI Estimate tender** — After spec parse or estimation, an "AI Estimate" tender is created/updated from mid-range values so the user can compare against real quotes.
+5. **Location-aware pricing** — Estimates adjusted for local labour and material costs based on user's configured area.
 
 This runs entirely client-side. No backend needed. User provides their own Anthropic API key via the Settings modal (stored in localStorage under `reno-tracker-ak`).
 
@@ -94,18 +95,19 @@ This runs entirely client-side. No backend needed. User provides their own Anthr
 | Partial merge on parse | AI parse shows confirmation modal — user picks items to add/overwrite/skip instead of destructive replace |
 | Location-based estimates | AI cost estimates tuned to user's area for more accurate budgeting |
 | Tier-based owner options | Budget/Mid/Premium tiers on owner-supplied items for quick cost comparison |
+| Decoupled estimation | Spec extraction and cost estimation are independent steps — user can extract items fast, then selectively estimate per-item, per-section, or in bulk |
 
 ---
 
 ## Current State
 
-- **Version:** 1.5.0
+- **Version:** 1.6.0
 - **Last updated:** 2026-03-10
 - **Multi-project:** Create, switch, delete, rename independent projects. Auto-migration from old single-key format. Demo project included by default. Blank projects start empty with graceful empty states across all tabs.
 - **Sample data:** 18 spec items (with eLow/eMid/eHigh estimates), 3 sample tenders, 9 milestones, 9 owner-supplied items (with Budget/Mid/Premium tiers), 4 scenarios
-- **AI features:** Spec parsing with merge confirmation, tender parsing, location-based estimates, AI Estimate tender auto-generation
+- **AI features:** Two-mode spec parsing (extract-only or with estimates), selective per-item/section/bulk AI estimation with progress, manual estimate entry via inline editing, tender parsing, location-based estimates, AI Estimate tender auto-generation
 - **Owner supplied:** Multi-option with tier tags, add real quotes, add new items UI
-- **Spec items:** Full CRUD — add, edit, delete via UI with cascade to tenders and scenarios
+- **Spec items:** Full CRUD — add, edit, delete via UI with cascade to tenders and scenarios. Inline estimate editing (click Range column). Clear estimates button.
 - **Tenders:** Full CRUD — add, delete, rename builder, edit per-item pricing/included/notes inline in comparison matrix
 
 ---
@@ -118,6 +120,7 @@ This runs entirely client-side. No backend needed. User provides their own Anthr
 4. ~~FEAT-012/013/015: AI parsing of spec and tenders~~ — Done (v1.3.0)
 5. ~~FEAT-004/005: Add/edit/delete spec items and tenders in UI~~ — Done (v1.4.0)
 6. ~~FEAT-019: Multi-project support~~ — Done (v1.5.0)
-7. FEAT-006: Add/edit/delete scenarios in UI
-8. FEAT-007: Custom milestone editing
-9. FEAT-009: Mobile responsive polish
+7. ~~FEAT-021: Two-mode spec parsing, selective estimation, manual entry~~ — Done (v1.6.0)
+8. FEAT-006: Add/edit/delete scenarios in UI
+9. FEAT-007: Custom milestone editing
+10. FEAT-009: Mobile responsive polish
