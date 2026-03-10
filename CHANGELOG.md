@@ -11,6 +11,10 @@
 
 ## Changelog
 
+### FEAT-020 Part 1 — in-progress (Component Breakdown)
+
+- **FEAT-020 (Part 1):** Component breakdown data model and AI parsing — specItems now support an optional `components` array where each component has `{description, qty, unitCost, subtotal}`. AI spec parsing prompt instructs the model to break each item into components whose subtotals approximate the eMid value. Tender parsing prompt now requests `tenderComponents` per item showing what the builder actually quoted. Merge confirmation modal shows "(X components)" label next to items that have breakdown detail. Backwards compatible — existing items without components work unchanged.
+
 ### v1.5.0 — 2026-03-10 (Multi-Project Support)
 
 - **FEAT-019:** Multi-project support — create, switch, delete, and rename independent renovation projects
@@ -98,6 +102,7 @@
 | FEAT-017 | high | done | Location-based cost estimates | Spec items get eLow/eMid/eHigh tuned to user's area, dashboard shows tier breakdown | 2026-03-10 |
 | FEAT-018 | medium | done | Flexible quote selection with tiers | Owner-supplied options tagged Budget/Mid/Premium, AI Estimate tender auto-generated | 2026-03-10 |
 | FEAT-019 | high | done | Multi-project support | Create, switch, delete, rename projects. Per-project data isolation. Auto-migration from old format. | 2026-03-10 |
+| FEAT-020 | high | in-progress | Component breakdown for spec items and tenders | Part 1: data model + AI parsing + merge modal label (done). Part 2: UI display in comparison matrix (pending). | 2026-03-10 |
 
 ## Closed / Done
 

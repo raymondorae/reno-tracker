@@ -131,13 +131,15 @@ const loc=data.location||"Surrey";
 const sys=`You are a UK construction cost estimator. Analyse the uploaded spec document(s). This may be a complete spec or a partial section — extract whatever items are present.
 Extract every line item as builder-scope or owner-supplied.
 CRITICAL: Your entire response MUST be a single valid JSON object. Do NOT wrap in markdown code fences. Do NOT include any text before or after the JSON. Do NOT add commentary or explanation. Start with { and end with }.
-Format: {"specItems":[{"category":"Demolition","item":"Strip out kitchen","unit":"item","qty":1,"specNotes":"Full removal","eLow":3000,"eMid":4500,"eHigh":6500}],
+Format: {"specItems":[{"category":"Electrical","item":"Kitchen electrical installation","unit":"item","qty":1,"specNotes":"All kitchen points per spec","eLow":3000,"eMid":4200,"eHigh":6000,
+"components":[{"description":"DSSO above counter level","qty":"6","unitCost":45,"subtotal":270},{"description":"SSO below counter level","qty":"3","unitCost":55,"subtotal":165},{"description":"13amp fused spur for extract fan","qty":"1","unitCost":120,"subtotal":120}]}],
 "ownerSupplied":[{"item":"Kitchen worktop","specNotes":"From spec","eLow":5000,"eMid":10000,"eHigh":18000,"lowDesc":"Builder grade","midDesc":"Mid-range","highDesc":"Bespoke"}]}
+For each specItem, include a "components" array that breaks down the individual elements that make up the item. Each component has: description (string), qty (string), unitCost (number or null if not applicable), subtotal (number — estimated cost for this component). The component subtotals should roughly add up to the item's eMid value. If an item cannot be meaningfully broken into components, return an empty components array [].
 IMPORTANT: Use current UK prices (2025-2026) for the ${loc} area specifically. Adjust estimates for local labour and material costs in ${loc}.
 Categories: ${CATS.join(", ")}. Builder-scope: demolition, structural, electrical, plumbing, plastering, install labour, decoration, external, roofing. Owner-supplied: kitchen units/appliances, sanitaryware, tiles, doors, handles, lights, radiators, flooring materials. Be thorough.`;
 setPm("AI analysing spec for "+loc+" pricing...");const resp=await aiCall(ak,[{role:"user",content}],sys);setPm("Processing...");
 let p;try{p=extractJSON(resp)}catch(e){throw e}
-const nsi=(p.specItems||[]).map((s,i)=>({id:200+i+Math.floor(Math.random()*1000),category:s.category||"Other",item:s.item,unit:s.unit||"item",qty:s.qty||1,specNotes:s.specNotes||"",status:"estimated",eLow:s.eLow||0,eMid:s.eMid||0,eHigh:s.eHigh||0}));
+const nsi=(p.specItems||[]).map((s,i)=>({id:200+i+Math.floor(Math.random()*1000),category:s.category||"Other",item:s.item,unit:s.unit||"item",qty:s.qty||1,specNotes:s.specNotes||"",status:"estimated",eLow:s.eLow||0,eMid:s.eMid||0,eHigh:s.eHigh||0,components:(s.components||[]).map(c=>({description:c.description||"",qty:String(c.qty||"1"),unitCost:c.unitCost!=null?c.unitCost:null,subtotal:c.subtotal||0}))}));
 const noi=(p.ownerSupplied||[]).map((o,i)=>({id:"os_ai_"+Date.now()+"_"+i,item:o.item,specNotes:o.specNotes||"",status:"estimated",ordered:false,delivered:false,options:[{id:"ol"+i,supplier:"Budget est.",description:o.lowDesc||"Basic",price:o.eLow||0,active:false,tier:"low"},{id:"om"+i,supplier:"Mid est.",description:o.midDesc||"Mid-range",price:o.eMid||0,active:true,tier:"mid"},{id:"oh"+i,supplier:"Premium est.",description:o.highDesc||"High-end",price:o.eHigh||0,active:false,tier:"high"}]}));
 // Show merge confirmation
 const sel={spec:{},owner:{}};nsi.forEach((s,i)=>{sel.spec[i]=true});noi.forEach((o,i)=>{sel.owner[i]=true});
@@ -165,10 +167,12 @@ const ss=data.specItems.map(s=>"ID:"+s.id+"|"+s.category+"|"+s.item+"|"+s.specNo
 content.push({type:"text",text:"Analyse this tender from "+bn+". Map to spec items:\n"+ss});
 const sys=`UK quantity surveyor. Map tender items to spec IDs. Flag deviations and missing items.
 CRITICAL: Your entire response MUST be a single valid JSON object. Do NOT wrap in markdown code fences. Do NOT include any text before or after the JSON. Do NOT add commentary or explanation. Start with { and end with }.
-Format: {"builderName":"${bn}","totalPrice":0,"items":{"100":{"price":4500,"included":true,"notes":""}}}`;
+For each item, include a "tenderComponents" array breaking down what the tender actually quoted. Each component: {"description":"6x DSSO above counter","qty":"6","unitCost":50,"subtotal":300}. If the tender doesn't itemise components, return an empty array [].
+Format: {"builderName":"${bn}","totalPrice":0,"items":{"100":{"price":4500,"included":true,"notes":"","tenderComponents":[{"description":"Component detail","qty":"1","unitCost":null,"subtotal":4500}]}}}`;
 setPm("AI analysing tender from "+bn+"...");const resp=await aiCall(ak,[{role:"user",content}],sys);
 let p;try{p=extractJSON(resp)}catch(e){throw e}
-const nt={id:"t_"+Date.now(),name:p.builderName||bn,submitted:new Date().toISOString().slice(0,10),totalPrice:p.totalPrice||Object.values(p.items||{}).reduce((s,i)=>s+(i.included?i.price:0),0),status:"confirmed",items:p.items||{}};
+const pitems={};Object.entries(p.items||{}).forEach(([k,v])=>{pitems[k]={price:v.price||0,included:v.included!==false,notes:v.notes||"",tenderComponents:(v.tenderComponents||[]).map(c=>({description:c.description||"",qty:String(c.qty||"1"),unitCost:c.unitCost!=null?c.unitCost:null,subtotal:c.subtotal||0}))}});
+const nt={id:"t_"+Date.now(),name:p.builderName||bn,submitted:new Date().toISOString().slice(0,10),totalPrice:p.totalPrice||Object.values(pitems).reduce((s,i)=>s+(i.included?i.price:0),0),status:"confirmed",items:pitems};
 save({...data,tenders:[...data.tenders,nt],tenderDocuments:[]});setPm("Done! "+nt.name+" added.");setTbn("");setTimeout(()=>setPm(""),5000)}catch(e){setPm("Error: "+e.message)}setParsing(false)}
 
 /* ── ADD SPEC ITEM ── */
@@ -226,7 +230,7 @@ return<div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-c
 {md.specItems.length>0&&<><div className="text-xs text-zinc-500 uppercase tracking-wider mb-2">Builder-Scope Items ({md.specItems.length})</div>
 <div className="space-y-2 mb-4">{md.specItems.map((si,i)=><div key={i} className="flex items-center gap-3 bg-zinc-800/50 rounded px-3 py-2">
 <input type="checkbox" checked={md.selected.spec[i]||false} onChange={()=>{const ns={...md.selected,spec:{...md.selected.spec,[i]:!md.selected.spec[i]}};setMergeData({...md,selected:ns})}} className="rounded"/>
-<div className="flex-1"><div className="text-sm text-zinc-300">{si.item}</div><div className="text-xs text-zinc-500">{si.category} · {si.specNotes}</div><div className="text-xs text-zinc-600 mt-1">{fmt(si.eLow)} – {fmt(si.eMid)} – {fmt(si.eHigh)}</div></div>
+<div className="flex-1"><div className="text-sm text-zinc-300">{si.item}{si.components&&si.components.length>0&&<span className="ml-2 text-xs text-zinc-500 bg-zinc-800 px-1.5 py-0.5 rounded">({si.components.length} components)</span>}</div><div className="text-xs text-zinc-500">{si.category} · {si.specNotes}</div><div className="text-xs text-zinc-600 mt-1">{fmt(si.eLow)} – {fmt(si.eMid)} – {fmt(si.eHigh)}</div></div>
 <select value={md.mode.spec[i]||"add"} onChange={e=>{const nm={...md.mode,spec:{...md.mode.spec,[i]:e.target.value}};setMergeData({...md,mode:nm})}} className="bg-zinc-700 border border-zinc-600 rounded text-xs text-zinc-300 px-2 py-1">
 <option value="add">Add new</option><option value="overwrite">Overwrite existing</option><option value="skip">Skip</option></select>
 </div>)}</div></>}
