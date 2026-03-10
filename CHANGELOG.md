@@ -11,6 +11,17 @@
 
 ## Changelog
 
+### v1.3.0 — 2026-03-10 (Partial Spec Merge, Location Estimates, Flexible Quotes)
+
+- **FEAT-016:** Partial spec merge with confirmation — AI-parsed items shown in a review modal where user selects which to add, overwrite, or skip. No more destructive full-replace on re-parse.
+- **FEAT-017:** Location-based cost estimates — each spec item gets eLow/eMid/eHigh estimates tuned to the user's area (e.g. Surrey). Dashboard shows Budget / Mid-Range / Premium cost tiers.
+- **FEAT-018:** Flexible quote selection — owner-supplied options tagged with tier (Budget/Mid/Premium). AI auto-generates an "AI Estimate" tender from mid-range values.
+- Status indicators on all items — sample (grey), estimated (amber pulsing), confirmed (green) dots throughout the UI
+- Settings modal combining API key and location in one place
+- Data migration for old ownerSupplied format (flat budget → options array)
+- AI Estimate tender auto-created/updated when spec is parsed
+- Scenarios auto-expanded to include newly parsed items
+
 ### v1.1.0 — 2026-03-10 (Upload Zones, Multi-Option Owner Supplied, Add Items UI)
 
 - **FEAT-011:** Upload zones on Tender Comparison tab — drag-and-drop or click-to-browse for spec document and builder tenders (PDF/image)
@@ -57,10 +68,13 @@
 | FEAT-009 | high | open | Mobile responsive polish | Test and fix layout on small screens | 2026-03-10 |
 | FEAT-010 | high | done | Add new owner-supplied items manually via UI | Must be able to add items not in the spec doc (e.g. discovered during build) | 2026-03-10 |
 | FEAT-011 | critical | done | Upload zones on Tender Comparison tab | Two areas: one for spec document upload, one for builder tender uploads. Accepts PDF/images. | 2026-03-10 |
-| FEAT-012 | critical | open | AI parsing of spec document | On upload, use Anthropic API to read the spec doc and auto-populate specItems + ownerSupplied items. Should split builder-scope work from owner-supplied fixtures/fittings automatically. | 2026-03-10 |
-| FEAT-013 | critical | open | AI parsing of builder tenders | On upload, use Anthropic API to read each tender, map items to spec, extract pricing, flag deviations from spec, flag omissions. Auto-populate the tender comparison matrix. | 2026-03-10 |
+| FEAT-012 | critical | done | AI parsing of spec document | Parses spec, extracts items with location-based estimates, shows merge confirmation modal | 2026-03-10 |
+| FEAT-013 | critical | done | AI parsing of builder tenders | Maps tender items to spec, extracts pricing, flags deviations/omissions | 2026-03-10 |
 | FEAT-014 | high | done | Multiple options per owner-supplied item | Each item (e.g. "kitchen worktop") should support 2-3 supplier/price options. User selects which option is active — only the active one feeds into budget. Example: Option A (Howdens laminate £2,400), Option B (quartz £4,100), Option C (dekton £6,800). | 2026-03-10 |
-| FEAT-015 | high | open | Auto-populate owner-supplied items from spec | When spec doc is parsed by AI, owner-supplied items should be automatically extracted and populated with descriptions and estimated budgets. | 2026-03-10 |
+| FEAT-015 | high | done | Auto-populate owner-supplied items from spec | AI extracts owner-supplied items with low/mid/high estimates during spec parse | 2026-03-10 |
+| FEAT-016 | high | done | Partial spec merge with confirmation | Review modal to select/overwrite/skip AI-parsed items instead of full replace | 2026-03-10 |
+| FEAT-017 | high | done | Location-based cost estimates | Spec items get eLow/eMid/eHigh tuned to user's area, dashboard shows tier breakdown | 2026-03-10 |
+| FEAT-018 | medium | done | Flexible quote selection with tiers | Owner-supplied options tagged Budget/Mid/Premium, AI Estimate tender auto-generated | 2026-03-10 |
 
 ## Closed / Done
 
@@ -71,6 +85,12 @@
 | FEAT-010 | Add new owner-supplied items manually via UI | Add item form on Owner Supplied tab | 2026-03-10 |
 | FEAT-011 | Upload zones on Tender Comparison tab | Drag-and-drop upload for spec doc + builder tenders with file preview | 2026-03-10 |
 | FEAT-014 | Multiple options per owner-supplied item | Each item supports multiple supplier/price options with active selection toggle | 2026-03-10 |
+| FEAT-012 | AI parsing of spec document | Client-side Anthropic API parses spec with location-based estimates, merge confirmation modal | 2026-03-10 |
+| FEAT-013 | AI parsing of builder tenders | Maps tender items to spec IDs, extracts pricing, flags deviations/omissions | 2026-03-10 |
+| FEAT-015 | Auto-populate owner-supplied items from spec | AI extracts owner-supplied items with low/mid/high tier estimates | 2026-03-10 |
+| FEAT-016 | Partial spec merge with confirmation | Review modal to add/overwrite/skip parsed items, no destructive full-replace | 2026-03-10 |
+| FEAT-017 | Location-based cost estimates | eLow/eMid/eHigh per spec item tuned to user's area, dashboard tier breakdown | 2026-03-10 |
+| FEAT-018 | Flexible quote selection with tiers | Owner-supplied options tagged Budget/Mid/Premium, AI Estimate tender auto-generated | 2026-03-10 |
 
 ---
 

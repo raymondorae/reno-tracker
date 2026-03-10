@@ -37,9 +37,10 @@ Single-file architecture — all React components, default data, and styling liv
 | Module | Status | Description |
 |--------|--------|-------------|
 | Dashboard | Live | Budget overview, utilisation bar, tender selector, issue summary, milestone overview |
-| Tender Comparison | Live (v2) | Upload zones for spec doc + builder tenders, spec-to-tender matrix, deviation/omission flags, totals row |
+| Tender Comparison | Live (v3) | Upload zones, AI spec parsing with merge confirmation, AI tender parsing, comparison matrix with estimate ranges, status indicators |
 | Milestones | Live | Payment schedule by contract %, status toggles (pending/partial/paid/overdue) |
-| Owner Supplied | Live (v2) | Multi-option fixtures & fittings with active selection, add new items via UI, budget vs actual, ordered/delivered toggles |
+| Owner Supplied | Live (v3) | Multi-option with tier tags (Budget/Mid/Premium), add real quotes, add new items, ordered/delivered toggles |
+| AI Integration | Live | Spec parsing with location-based estimates, tender parsing, partial merge with confirmation modal, AI Estimate tender auto-generation |
 | Scenarios | Live | What-if modelling, toggle items per scenario, budget impact calculation |
 
 ---
@@ -48,31 +49,27 @@ Single-file architecture — all React components, default data, and styling liv
 
 All state is held in a single JSON object saved to localStorage. Key entities:
 
-- **specItems** — Line items from the spec document (id, category, item, unit, qty, specNotes)
-- **tenders** — Builder submissions, each containing per-item pricing, included flag, and notes
+- **specItems** — Line items from the spec document (id, category, item, unit, qty, specNotes, status, eLow, eMid, eHigh)
+- **tenders** — Builder submissions with status (sample/estimated/confirmed), per-item pricing, included flag, and notes
 - **milestones** — Payment stages with % of contract, due date, status, paid amount
-- **ownerSupplied** — Fixtures/fittings the owner sources (budget, actual, ordered, delivered)
+- **ownerSupplied** — Fixtures/fittings with options[] array (each option has supplier, description, price, active, tier), ordered/delivered toggles
 - **scenarios** — Named sets of included/excluded spec items and owner items for what-if modelling
-
-### Planned data model changes (v2)
-
-**ownerSupplied.options[]** — Each owner-supplied item gains an `options` array. Each option contains: supplier, description, price, and an `active` boolean. Only the active option feeds into budget calculations.
-
-**specDocument** — Raw uploaded spec doc (stored as base64), used as the source of truth for AI parsing.
-
-**tenderDocuments[]** — Raw uploaded tender responses from builders, each parsed by AI into structured tender data.
+- **specDocuments** — Uploaded spec document files (base64 data URLs)
+- **tenderDocuments** — Uploaded tender files with builderName label
+- **location** — User's area for location-based cost estimates (e.g. "Surrey")
 
 ---
 
-## AI Integration
+## AI Integration (Live)
 
-The app uses the Anthropic API (client-side fetch to `api.anthropic.com/v1/messages` using `claude-sonnet-4-20250514`) to:
+The app uses the Anthropic API (client-side fetch to `api.anthropic.com/v1/messages` using `claude-sonnet-4-20250514` with `anthropic-dangerous-direct-browser-access` header) to:
 
-1. **Parse spec documents** — User uploads a PDF/image of the spec. AI extracts all line items, splits them into builder-scope specItems and owner-supplied items, and auto-populates both sections.
-2. **Parse tender responses** — User uploads each builder's tender PDF/image. AI reads it, maps each quoted item to the corresponding spec line item, identifies pricing, flags deviations from spec, and flags omissions.
-3. **Cross-reference** — AI compares each tender against the spec document and populates the comparison matrix with flags.
+1. **Parse spec documents** — User uploads PDF/images. AI extracts all line items with location-based eLow/eMid/eHigh estimates, splits into builder-scope and owner-supplied. Results shown in a merge confirmation modal where user selects which items to add/overwrite/skip.
+2. **Parse tender responses** — User uploads each builder's tender. AI maps items to spec IDs, extracts pricing, flags deviations and omissions.
+3. **Auto-generate AI Estimate tender** — After spec parse, an "AI Estimate" tender is created from mid-range values so the user can compare against real quotes.
+4. **Location-aware pricing** — Estimates adjusted for local labour and material costs based on user's configured area.
 
-This runs entirely client-side. No backend needed. User provides their own Anthropic API key via an in-app settings area.
+This runs entirely client-side. No backend needed. User provides their own Anthropic API key via the Settings modal (stored in localStorage under `reno-tracker-ak`).
 
 ---
 
@@ -85,17 +82,20 @@ This runs entirely client-side. No backend needed. User provides their own Anthr
 | localStorage | Free, zero-infra, works offline. Trade-off: no cross-device sync |
 | Sample data pre-loaded | User can explore immediately, replace with real data later |
 | GBP currency | UK-based user |
-| Client-side Anthropic API | No backend to manage, runs in browser. User supplies API key. |
+| Client-side Anthropic API | No backend to manage, runs in browser. User supplies API key via Settings modal. |
+| Partial merge on parse | AI parse shows confirmation modal — user picks items to add/overwrite/skip instead of destructive replace |
+| Location-based estimates | AI cost estimates tuned to user's area for more accurate budgeting |
+| Tier-based owner options | Budget/Mid/Premium tiers on owner-supplied items for quick cost comparison |
 
 ---
 
 ## Current State
 
-- **Version:** 1.1.0
+- **Version:** 1.3.0
 - **Last updated:** 2026-03-10
-- **Sample data:** 18 spec items, 3 tenders, 9 milestones, 9 owner-supplied items, 4 scenarios
-- **Upload zones:** Spec doc + builder tender upload areas on Tender Comparison tab
-- **Owner supplied:** Multi-option support with active selection, add new items UI
+- **Sample data:** 18 spec items (with eLow/eMid/eHigh estimates), 3 sample tenders, 9 milestones, 9 owner-supplied items (with Budget/Mid/Premium tiers), 4 scenarios
+- **AI features:** Spec parsing with merge confirmation, tender parsing, location-based estimates, AI Estimate tender auto-generation
+- **Owner supplied:** Multi-option with tier tags, add real quotes, add new items UI
 
 ---
 
