@@ -11,9 +11,10 @@
 
 ## Changelog
 
-### FEAT-021 — in-progress (Two-Mode Spec Parsing)
+### FEAT-021 — done (Two-Mode Spec Parsing & Selective Estimation)
 
 - **FEAT-021 (Part 1):** Split spec parsing into two modes — "Extract Items Only" (fast, no estimates, no components) and "Extract with AI Estimates" (existing full behaviour with location-based pricing). Two parse buttons: primary "Extract Items from Spec" and secondary "Extract with AI Estimates". New "manual" status (blue outlined dot) for items parsed without estimates. Extract-only mode uses a simpler AI prompt for faster, more reliable results. `applyMerge` only creates/updates the AI Estimate tender when items have estimates. Manual items show as excluded in AI Estimate tender. Status legend updated to include manual indicator.
+- **FEAT-021 (Part 2):** Selective AI estimation — get cost estimates per item, per category section, or in bulk. Per-item: ✦ button on manual items sends a small focused API call for that one item (eLow/eMid/eHigh + components breakdown). Per-section: "✦ Est." button on category headers estimates all manual items in that category in one API call. Bulk: "✦ Get All Estimates" button above the comparison matrix iterates through categories one at a time with progress indicator ("Estimating Electrical (3/7 sections)..."). All modes validate API key and location before calling, show inline loading spinners (pulsing ⟳), display inline errors per item on failure, and auto-update the AI Estimate tender on success. Uses functional `setData` to safely compose concurrent state updates.
 
 ### BUG-004 — done (JSON Parse Fails on Large AI Responses)
 
@@ -118,7 +119,7 @@
 | FEAT-018 | medium | done | Flexible quote selection with tiers | Owner-supplied options tagged Budget/Mid/Premium, AI Estimate tender auto-generated | 2026-03-10 |
 | FEAT-019 | high | done | Multi-project support | Create, switch, delete, rename projects. Per-project data isolation. Auto-migration from old format. | 2026-03-10 |
 | FEAT-020 | high | done | Component breakdown for spec items and tenders | Part 1: data model + AI parsing + merge modal label. Part 2: expandable sub-rows in comparison matrix with tender component comparison. | 2026-03-10 |
-| FEAT-021 | high | in-progress | Two-mode spec parsing (extract only vs with estimates) | Part 1: two parse buttons, manual status, conditional AI Estimate tender. Part 2: TBD | 2026-03-10 |
+| FEAT-021 | high | done | Two-mode spec parsing & selective estimation | Part 1: two parse buttons, manual status, conditional AI Estimate tender. Part 2: per-item, per-section, and bulk estimation with progress. | 2026-03-10 |
 
 ## Closed / Done
 
@@ -141,6 +142,7 @@
 | BUG-003 | JSON parse failed on spec/tender AI responses | Robust extractJSON helper: strips code fences, trims preamble/postamble, regex fallback for outermost JSON, console logging on failure. Strengthened system prompts to explicitly forbid markdown formatting. | 2026-03-10 |
 | FEAT-020 | Component breakdown for spec items and tenders | Part 1: data model + AI parsing + merge modal label. Part 2: expandable sub-rows in comparison matrix with chevron toggle, tender component parallel display, components total row. | 2026-03-10 |
 | BUG-004 | JSON parse fails on large AI responses | Increased max_tokens 4096→16384, added repairTruncatedJSON helper (unclosed string handling, bracket closing), stop_reason truncation detection, clear console logging. | 2026-03-10 |
+| FEAT-021 | Two-mode spec parsing & selective estimation | Part 1: extract-only vs with-estimates modes. Part 2: per-item ✦ button, per-section Est, bulk Get All Estimates with progress. | 2026-03-10 |
 
 ---
 
