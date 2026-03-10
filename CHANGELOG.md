@@ -11,6 +11,11 @@
 
 ## Changelog
 
+### BUG-006 — done (Collapsible categories not working)
+
+- **Root cause:** `CATS.map()` returned nested arrays with `null` entries for empty categories inside `<tbody>`. React's reconciliation can fail to properly re-render conditionally shown `<tr>` elements when the array structure is `[[<tr/>, <tr/>], null, [<tr/>], ...]`.
+- **Fix:** Changed `CATS.map()` to `CATS.flatMap()` and `return null` to `return []` — React now receives a clean flat array of `<tr>` elements, ensuring collapse/expand state changes trigger correct re-renders.
+
 ### FEAT-023 — done (Spec validation / audit)
 
 - "Audit Extraction" button in the spec document upload card — enabled only when spec items AND spec documents both exist.
@@ -133,6 +138,7 @@
 | BUG-003 | high | done | JSON parse failed on spec/tender AI responses | Upload spec or tender PDF, parse via AI — response contains markdown code fences or preamble text that breaks JSON.parse | 2026-03-10 |
 | BUG-004 | high | done | JSON parse fails on large AI responses despite valid-looking start | max_tokens too low (4096) causes truncation with component arrays. extractJSON had no repair logic for truncated JSON. | 2026-03-10 |
 | BUG-005 | medium | done | Extract Items button misleadingly showed estimates | Merge modal showed £0 values for extract-only items; upload zone desc implied estimates; AI user message was identical for both modes | 2026-03-10 |
+| BUG-006 | medium | done | Collapsible categories not working | Category headers in comparison matrix don't expand/collapse — CATS.map() with nested arrays + nulls caused React reconciliation issues. Fixed with flatMap. | 2026-03-10 |
 
 ## Open Feature Requests
 
@@ -159,6 +165,12 @@
 | FEAT-019 | high | done | Multi-project support | Create, switch, delete, rename projects. Per-project data isolation. Auto-migration from old format. | 2026-03-10 |
 | FEAT-020 | high | done | Component breakdown for spec items and tenders | Part 1: data model + AI parsing + merge modal label. Part 2: expandable sub-rows in comparison matrix with tender component comparison. | 2026-03-10 |
 | FEAT-021 | high | done | Two-mode spec parsing, selective estimation & manual entry | Part 1: two parse buttons, manual status, conditional AI Estimate tender. Part 2: per-item, per-section, and bulk estimation with progress. Part 3: inline manual estimate editing, clear button. | 2026-03-10 |
+| FEAT-024 | high | open | Budget input/editing | No visible way for users to input or edit their total budget number. Need a budget setting field on Dashboard or Settings. | 2026-03-10 |
+| FEAT-025 | high | open | User authentication and session persistence | Add login/credential protection so users can safeguard projects and save work across sessions (cloud storage). | 2026-03-10 |
+| FEAT-026 | medium | open | Link to Homegrown app | Shared login page with home screen showing both Renovation Tracker and Homegrown app options. | 2026-03-10 |
+| FEAT-027 | high | open | Minimise AI token costs | Investigate: batching, caching parsed results, using Haiku for extraction and Sonnet only for estimates, reducing prompt size, client-side caching of AI responses. | 2026-03-10 |
+| FEAT-028 | medium | open | Google Docs and MS Word (.docx) upload support | Currently only PDF and images accepted. Add client-side text extraction from .docx files and Google Docs links. | 2026-03-10 |
+| FEAT-029 | medium | open | Paywall for AI features | Make AI-enabled functionality paid so each user covers their own API costs. Investigate: Stripe integration, token tracking per user, usage limits on free tier. | 2026-03-10 |
 
 ## Closed / Done
 
@@ -183,6 +195,7 @@
 | BUG-004 | JSON parse fails on large AI responses | Increased max_tokens 4096→16384, added repairTruncatedJSON helper (unclosed string handling, bracket closing), stop_reason truncation detection, clear console logging. | 2026-03-10 |
 | FEAT-021 | Two-mode spec parsing, selective estimation & manual entry | Part 1: extract-only vs with-estimates modes. Part 2: per-item ✦ button, per-section Est, bulk Get All Estimates with progress. Part 3: inline manual estimate editing (click Range column), clear estimates button. | 2026-03-10 |
 | BUG-005 | Extract Items button misleadingly showed estimates | Merge modal shows "No estimates" for extract-only items. Upload zone desc neutralised. AI user message differentiated. Hint text under buttons. | 2026-03-10 |
+| BUG-006 | Collapsible categories not working | Changed CATS.map() to CATS.flatMap() with return [] instead of return null — gives React a flat array for proper reconciliation. | 2026-03-10 |
 
 ---
 
