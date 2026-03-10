@@ -11,6 +11,16 @@
 
 ## Changelog
 
+### FEAT-022 — done (Collapsible category groups in tender comparison matrix)
+
+- Spec items in the comparison matrix are now grouped by category with collapsible header rows.
+- Category header row shows: collapse/expand chevron, category name (bold, uppercase), item count, estimate range subtotal, and per-tender subtotals.
+- All categories start collapsed by default for a cleaner overview of 70+ items.
+- "Expand All" / "Collapse All" toggle link above the matrix.
+- Three-level hierarchy: Category (collapsible) → Item (with existing component expand) → Components.
+- Chevron rotates smoothly on toggle (reuses existing `.chv` transition).
+- Grand totals row preserved at bottom.
+
 ### BUG-005 — done (Extract Items button misleadingly showed estimates)
 
 - **Root cause:** Merge confirmation modal always displayed `£0 – £0 – £0` for extract-only items because `fmt(null)` formats as `£0`. Upload zone desc said "Estimates tuned for..." even though primary action is extract-only. User message sent to AI was identical for both modes.
