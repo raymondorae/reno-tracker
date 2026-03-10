@@ -9,6 +9,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config={theme:{extend:{fontFamily:{sans:['DM Sans','system-ui','sans-serif']}}}}</script>
   <style>body{font-family:'DM Sans',system-ui,sans-serif}.tn{font-variant-numeric:tabular-nums}::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-thumb{background:#3f3f46;border-radius:3px}input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}input[type=number]{-moz-appearance:textfield}@keyframes ps{0%,100%{opacity:1}50%{opacity:.5}}.ps{animation:ps 2s ease-in-out infinite}.chv{transition:transform .15s ease}</style>
@@ -20,6 +21,29 @@ const{useState,useEffect,useCallback,useMemo,useRef}=React;
 const DEBUG=false;
 const PKK="reno-tracker-projects",APK="reno-tracker-active-project",AKK="reno-tracker-ak";
 function projKey(id){return"reno-tracker-proj-"+id}
+/*
+-- Supabase SQL (run in SQL Editor):
+CREATE TABLE reno_projects (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  project_id TEXT NOT NULL,
+  name TEXT NOT NULL DEFAULT 'Untitled',
+  data JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(user_id, project_id)
+);
+ALTER TABLE reno_projects ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can CRUD their own projects"
+  ON reno_projects FOR ALL
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+CREATE INDEX idx_reno_projects_user ON reno_projects(user_id);
+CREATE INDEX idx_reno_projects_updated ON reno_projects(user_id, updated_at DESC);
+*/
+const SUPABASE_URL="https://ddokpzadckyyzolopkai.supabase.co";
+const SUPABASE_ANON_KEY="sb_publishable_GJkESb66fICthvrd7daCyg_EZzNZ5Oz";
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 const fmt=n=>new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP",minimumFractionDigits:0,maximumFractionDigits:0}).format(n||0);
 const pct=n=>Math.round(n)+"%";
 const CATS=["Demolition","Structural","Electrical","Plumbing","Plastering","Kitchen","Bathrooms","Flooring","Decoration","External","Windows","Roofing"];
@@ -150,7 +174,39 @@ scenarios:[{id:"s1",name:"Full spec",itemsIncluded:[1,2,3,4,5,6,7,8,9,10,11,12,1
 selectedTender:"t1",specDocuments:[],tenderDocuments:[]};
 const ed={projectName:"New Project",totalBudget:0,contingencyPct:10,location:"",specItems:[],tenders:[],milestones:[],ownerSupplied:[],scenarios:[],selectedTender:"",specDocuments:[],tenderDocuments:[]};
 
-function App(){
+function AuthGate(){
+const[session,setSession]=useState(null);const[authLoading,setAuthLoading]=useState(true);
+const[authMode,setAuthMode]=useState("login");const[authEmail,setAuthEmail]=useState("");const[authPass,setAuthPass]=useState("");
+const[authError,setAuthError]=useState("");const[authSuccess,setAuthSuccess]=useState("");const[authBusy,setAuthBusy]=useState(false);
+
+useEffect(()=>{sb.auth.getSession().then(({data:{session:s}})=>{setSession(s);setAuthLoading(false)});
+const{data:{subscription}}=sb.auth.onAuthStateChange((_,s)=>{setSession(s)});
+return()=>subscription.unsubscribe()},[]);
+
+async function handleAuth(e){e.preventDefault();setAuthError("");setAuthSuccess("");setAuthBusy(true);
+try{if(authMode==="login"){const{error}=await sb.auth.signInWithPassword({email:authEmail,password:authPass});
+if(error)throw error}else{const{error}=await sb.auth.signUp({email:authEmail,password:authPass});
+if(error)throw error;setAuthSuccess("Check your email to confirm your account.");setAuthBusy(false);return}}catch(err){setAuthError(err.message)}setAuthBusy(false)}
+
+function handleSignOut(){sb.auth.signOut();setSession(null)}
+
+if(authLoading)return<div className="min-h-screen bg-zinc-950 flex items-center justify-center"><div className="text-zinc-400">Loading...</div></div>;
+
+if(!session)return<div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
+<div className="bg-zinc-900/80 border border-zinc-800 rounded-lg p-8 max-w-sm w-full">
+<div className="flex items-center justify-center gap-3 mb-6"><div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-amber-400"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/></svg></div><div className="text-xl font-bold text-zinc-100">Renovation Tracker</div></div>
+<div className="flex mb-6 border-b border-zinc-800">{["login","signup"].map(m=><button key={m} onClick={()=>{setAuthMode(m);setAuthError("");setAuthSuccess("")}} className={"flex-1 py-2 text-sm font-medium "+(authMode===m?"text-amber-300 border-b-2 border-amber-400":"text-zinc-500 border-b-2 border-transparent")}>{m==="login"?"Log In":"Sign Up"}</button>)}</div>
+<form onSubmit={handleAuth} className="space-y-3">
+<input type="email" value={authEmail} onChange={e=>setAuthEmail(e.target.value)} placeholder="Email" required className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2.5 text-sm text-zinc-300 placeholder-zinc-600 focus:border-amber-500 outline-none"/>
+<input type="password" value={authPass} onChange={e=>setAuthPass(e.target.value)} placeholder="Password" required minLength={6} className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2.5 text-sm text-zinc-300 placeholder-zinc-600 focus:border-amber-500 outline-none"/>
+{authError&&<div className="text-sm text-red-400 bg-red-950/30 border border-red-900/40 rounded px-3 py-2">{authError}</div>}
+{authSuccess&&<div className="text-sm text-emerald-400 bg-emerald-950/30 border border-emerald-900/40 rounded px-3 py-2">{authSuccess}</div>}
+<button type="submit" disabled={authBusy} className={"w-full py-2.5 rounded text-sm font-medium "+(authBusy?"bg-zinc-700 text-zinc-400":"bg-amber-600 hover:bg-amber-500 text-zinc-950")}>{authBusy?"Please wait...":(authMode==="login"?"Log In":"Sign Up")}</button>
+</form></div></div>;
+
+return<App session={session} onSignOut={handleSignOut}/>}
+
+function App({session,onSignOut}){
 const[data,setData]=useState(null);const[tab,setTab]=useState("dashboard");const[loading,setLoading]=useState(true);
 const[tbn,setTbn]=useState("");const[noi,setNoi]=useState("");const[nos,setNos]=useState("");const[nop,setNop]=useState("");
 const[ak,setAk]=useState("");const[showSet,setShowSet]=useState(false);const[parsing,setParsing]=useState(false);const[pm,setPm]=useState("");
@@ -159,7 +215,12 @@ const[addSpec,setAddSpec]=useState(null);const[addTender,setAddTender]=useState(
 const[mergeData,setMergeData]=useState(null);// {specItems:[], ownerSupplied:[], selected:{spec:{},owner:{}}, mode:{spec:{},owner:{}}}
 const[activeProject,setActiveProject]=useState(null);const[showProjMenu,setShowProjMenu]=useState(false);const[projects,setProjects]=useState([]);
 const[newProj,setNewProj]=useState(null);const[renameProjId,setRenameProjId]=useState(null);
-const save=useCallback(nd=>{setData(nd);try{const ap=localStorage.getItem(APK)||"proj-demo";localStorage.setItem(projKey(ap),JSON.stringify(nd))}catch(e){}},[]);
+const saveTimerRef=useRef(null);
+const[syncStatus,setSyncStatus]=useState("idle");
+async function supabaseSave(pid,nd){if(!session)return;setSyncStatus("saving");
+try{await sb.from("reno_projects").upsert({user_id:session.user.id,project_id:pid,name:nd.projectName||"Untitled",data:nd,updated_at:new Date().toISOString()},{onConflict:"user_id,project_id"});setSyncStatus("saved")}catch(e){setSyncStatus("error")}}
+function debouncedCloudSave(pid,nd){if(saveTimerRef.current)clearTimeout(saveTimerRef.current);saveTimerRef.current=setTimeout(()=>supabaseSave(pid,nd),2000)}
+const save=useCallback(nd=>{setData(nd);try{const ap=localStorage.getItem(APK)||"proj-demo";localStorage.setItem(projKey(ap),JSON.stringify(nd));debouncedCloudSave(ap,nd)}catch(e){}},[]);
 const saveAk=useCallback(k=>{setAk(k);try{localStorage.setItem(AKK,k)}catch(e){}},[]);
 const[expandedItems,setExpandedItems]=useState(new Set());function toggleExpand(id){setExpandedItems(prev=>{const n=new Set(prev);n.has(id)?n.delete(id):n.add(id);return n})}
 const[estimatingItems,setEstimatingItems]=useState(new Set());const[estimateErrors,setEstimateErrors]=useState({});const[bulkProgress,setBulkProgress]=useState(null);
@@ -167,52 +228,73 @@ const[editEst,setEditEst]=useState(null);
 const[collapsedCats,setCollapsedCats]=useState(new Set(CATS));
 function toggleCat(cat){setCollapsedCats(prev=>{const n=new Set(prev);n.has(cat)?n.delete(cat):n.add(cat);return n})}
 const[auditResult,setAuditResult]=useState(null);const[auditing,setAuditing]=useState(false);
+useEffect(()=>()=>{if(saveTimerRef.current)clearTimeout(saveTimerRef.current)},[]);
+useEffect(()=>{function on(){setSyncStatus("idle")}function off(){setSyncStatus("offline")}window.addEventListener("online",on);window.addEventListener("offline",off);if(!navigator.onLine)setSyncStatus("offline");return()=>{window.removeEventListener("online",on);window.removeEventListener("offline",off)}},[]);
 
-function switchProject(pid){if(pid===activeProject){setShowProjMenu(false);return}
-localStorage.setItem(APK,pid);setActiveProject(pid);
-try{const s=localStorage.getItem(projKey(pid));
-if(s){const p=JSON.parse(s);if(!p.specDocuments)p.specDocuments=[];if(!p.tenderDocuments)p.tenderDocuments=[];if(p.location===undefined)p.location="";
-if(p.ownerSupplied&&p.ownerSupplied.length>0&&!p.ownerSupplied[0].options){p.ownerSupplied=p.ownerSupplied.map(o=>({...o,specNotes:o.notes||o.specNotes||"",status:"sample",options:[{id:"o1",supplier:o.supplier||"TBC",description:"",price:o.budget||0,active:true}]}))}
-setData(p)}else setData(dd)}catch(e){setData(dd)}
-setShowProjMenu(false);setTab("dashboard")}
+async function switchProject(pid){if(pid===activeProject){setShowProjMenu(false);return}
+localStorage.setItem(APK,pid);setActiveProject(pid);setShowProjMenu(false);setTab("dashboard");
+function normalize(p){if(!p.specDocuments)p.specDocuments=[];if(!p.tenderDocuments)p.tenderDocuments=[];if(p.location===undefined)p.location="";
+if(p.ownerSupplied&&p.ownerSupplied.length>0&&!p.ownerSupplied[0].options){p.ownerSupplied=p.ownerSupplied.map(o=>({...o,specNotes:o.notes||o.specNotes||"",status:"sample",options:[{id:"o1",supplier:o.supplier||"TBC",description:"",price:o.budget||0,active:true}]}))}return p}
+try{const{data:row,error}=await sb.from("reno_projects").select("data").eq("user_id",session.user.id).eq("project_id",pid).single();
+if(!error&&row&&row.data){const p=normalize(typeof row.data==="string"?JSON.parse(row.data):row.data);localStorage.setItem(projKey(pid),JSON.stringify(p));setData(p);return}}catch(e){}
+try{const s=localStorage.getItem(projKey(pid));if(s){setData(normalize(JSON.parse(s)))}else setData(dd)}catch(e){setData(dd)}}
 
 function createProject(){if(!newProj||!newProj.name.trim())return;
 const id="proj-"+Date.now();const projData=newProj.useDemo?{...JSON.parse(JSON.stringify(dd)),projectName:newProj.name.trim()}:{...JSON.parse(JSON.stringify(ed)),projectName:newProj.name.trim()};
 const np=[...projects,{id,name:newProj.name.trim(),createdAt:new Date().toISOString().slice(0,10),isDemo:false}];
 localStorage.setItem(PKK,JSON.stringify(np));localStorage.setItem(projKey(id),JSON.stringify(projData));
+if(session)sb.from("reno_projects").upsert({user_id:session.user.id,project_id:id,name:projData.projectName,data:projData,updated_at:new Date().toISOString()},{onConflict:"user_id,project_id"}).then(()=>{});
 setProjects(np);setNewProj(null);switchProject(id)}
 
 function deleteProject(pid){const pr=projects.find(p=>p.id===pid);
 if(!pr||pr.isDemo||projects.length<=1)return;
 if(!confirm('Delete project "'+pr.name+'"? All data will be permanently lost.'))return;
 const np=projects.filter(p=>p.id!==pid);localStorage.setItem(PKK,JSON.stringify(np));localStorage.removeItem(projKey(pid));
+if(session)sb.from("reno_projects").delete().eq("user_id",session.user.id).eq("project_id",pid).then(()=>{});
 setProjects(np);if(activeProject===pid){const target=np.find(p=>p.isDemo)||np[0];switchProject(target.id)}}
 
 function renameProject(pid,newName){if(!newName||!newName.trim())return;const nm=newName.trim();
 const np=projects.map(p=>p.id===pid?{...p,name:nm}:p);localStorage.setItem(PKK,JSON.stringify(np));setProjects(np);
-if(pid===activeProject)save({...data,projectName:nm});setRenameProjId(null)}
+if(pid===activeProject)save({...data,projectName:nm});
+else if(session)sb.from("reno_projects").update({name:nm}).eq("user_id",session.user.id).eq("project_id",pid).then(()=>{});
+setRenameProjId(null)}
 
-useEffect(()=>{try{const k=localStorage.getItem(AKK);if(k)setAk(k)}catch(e){}
-try{
-// Migration: old single-key format → multi-project
-const existingProjects=localStorage.getItem(PKK);
-if(!existingProjects){
-const oldData=localStorage.getItem("reno-tracker-v2");
-const demoId="proj-demo";
-const projects=[{id:demoId,name:"Demo Project",createdAt:"2026-03-10",isDemo:true}];
-localStorage.setItem(PKK,JSON.stringify(projects));
-localStorage.setItem(APK,demoId);
+useEffect(()=>{async function loadData(){try{const k=localStorage.getItem(AKK);if(k)setAk(k)}catch(e){}
+function normalize(p){if(!p.specDocuments)p.specDocuments=[];if(!p.tenderDocuments)p.tenderDocuments=[];if(p.location===undefined)p.location="";
+if(p.ownerSupplied&&p.ownerSupplied.length>0&&!p.ownerSupplied[0].options){p.ownerSupplied=p.ownerSupplied.map(o=>({...o,specNotes:o.notes||o.specNotes||"",status:"sample",options:[{id:"o1",supplier:o.supplier||"TBC",description:"",price:o.budget||0,active:true}]}))}return p}
+// Ensure localStorage has multi-project structure
+if(!localStorage.getItem(PKK)){const oldData=localStorage.getItem("reno-tracker-v2");const demoId="proj-demo";
+const lp=[{id:demoId,name:"Demo Project",createdAt:"2026-03-10",isDemo:true}];
+localStorage.setItem(PKK,JSON.stringify(lp));localStorage.setItem(APK,demoId);
 if(oldData){localStorage.setItem(projKey(demoId),oldData);localStorage.removeItem("reno-tracker-v2")}
-else{localStorage.setItem(projKey(demoId),JSON.stringify(dd))}}
-// Load active project
-const ap=localStorage.getItem(APK)||"proj-demo";
-setActiveProject(ap);
+else localStorage.setItem(projKey(demoId),JSON.stringify(dd))}
+// Try Supabase first
+try{const{data:rows,error}=await sb.from("reno_projects").select("project_id,name,data,updated_at").eq("user_id",session.user.id).order("updated_at",{ascending:false});
+if(!error&&rows&&rows.length>0){
+const pl=rows.map(r=>({id:r.project_id,name:r.name,createdAt:(r.updated_at||"").slice(0,10),isDemo:r.project_id==="proj-demo"}));
+setProjects(pl);localStorage.setItem(PKK,JSON.stringify(pl));
+const ap=rows[0].project_id;setActiveProject(ap);localStorage.setItem(APK,ap);
+const d=typeof rows[0].data==="string"?JSON.parse(rows[0].data):rows[0].data;
+const p=normalize(d);setData(p);localStorage.setItem(projKey(ap),JSON.stringify(p));
+rows.forEach(r=>{try{localStorage.setItem(projKey(r.project_id),JSON.stringify(typeof r.data==="string"?JSON.parse(r.data):r.data))}catch(e){}});
+setLoading(false);return}
+if(!error&&rows&&rows.length===0){
+// No Supabase data — check localStorage for migration
+const lp=JSON.parse(localStorage.getItem(PKK)||"[]");
+if(lp.length>0){const migrated=[];for(const pr of lp){try{const s=localStorage.getItem(projKey(pr.id));if(s){const pd=JSON.parse(s);migrated.push({user_id:session.user.id,project_id:pr.id,name:pd.projectName||pr.name,data:pd,updated_at:new Date().toISOString()})}}catch(e){}}
+if(migrated.length>0){await sb.from("reno_projects").upsert(migrated,{onConflict:"user_id,project_id"});setPm("Your existing data has been saved to your account.");setTimeout(()=>setPm(""),5000)}
+setProjects(lp);const ap=localStorage.getItem(APK)||lp[0].id;setActiveProject(ap);
+const s=localStorage.getItem(projKey(ap));if(s){setData(normalize(JSON.parse(s)))}else setData(dd);setLoading(false);return}
+// Truly fresh — create demo
+const demoId="proj-demo";const fp=[{id:demoId,name:"Demo Project",createdAt:new Date().toISOString().slice(0,10),isDemo:true}];
+localStorage.setItem(PKK,JSON.stringify(fp));localStorage.setItem(APK,demoId);localStorage.setItem(projKey(demoId),JSON.stringify(dd));
+sb.from("reno_projects").upsert({user_id:session.user.id,project_id:demoId,name:"Demo Project",data:dd,updated_at:new Date().toISOString()},{onConflict:"user_id,project_id"}).then(()=>{});
+setProjects(fp);setActiveProject(demoId);setData(dd);setLoading(false);return}}catch(e){}
+// Supabase failed — fall back to localStorage
+try{const ap=localStorage.getItem(APK)||"proj-demo";setActiveProject(ap);
 setProjects(JSON.parse(localStorage.getItem(PKK)||"[]"));
-const s=localStorage.getItem(projKey(ap));
-if(s){const p=JSON.parse(s);if(!p.specDocuments)p.specDocuments=[];if(!p.tenderDocuments)p.tenderDocuments=[];if(p.location===undefined)p.location="";
-if(p.ownerSupplied&&p.ownerSupplied.length>0&&!p.ownerSupplied[0].options){p.ownerSupplied=p.ownerSupplied.map(o=>({...o,specNotes:o.notes||o.specNotes||"",status:"sample",options:[{id:"o1",supplier:o.supplier||"TBC",description:"",price:o.budget||0,active:true}]}))}
-setData(p)}else setData(dd)
-}catch(e){setData(dd)}setLoading(false)},[]);
+const s=localStorage.getItem(projKey(ap));if(s){setData(normalize(JSON.parse(s)))}else setData(dd)}catch(e){setData(dd)}
+setLoading(false)}loadData()},[session]);
 
 const st=useMemo(()=>data?data.tenders.find(t=>t.id===data.selectedTender)||data.tenders[0]||null:null,[data]);
 const cv=useMemo(()=>st?Object.values(st.items).reduce((s,i)=>s+(i.included?i.price:0),0):0,[st]);
@@ -288,7 +370,7 @@ const nt={id:"t_"+Date.now(),name:p.builderName||bn,submitted:new Date().toISOSt
 save({...data,tenders:[...data.tenders,nt],tenderDocuments:[]});setPm("Done! "+nt.name+" added.");setTbn("");setTimeout(()=>setPm(""),5000)}catch(e){setPm("Error: "+e.message)}setParsing(false)}
 
 /* ── SELECTIVE ESTIMATION ── */
-function applyEstimates(estimates){setData(prev=>{const ns=prev.specItems.map(s=>{const est=estimates[s.id];if(!est)return s;return{...s,eLow:est.eLow||0,eMid:est.eMid||0,eHigh:est.eHigh||0,status:"estimated",components:(est.components||[]).map(c=>({description:c.description||"",qty:String(c.qty||"1"),unitCost:c.unitCost!=null?c.unitCost:null,subtotal:c.subtotal||0}))}});const nd={...prev,specItems:ns};const hasEst=ns.some(s=>s.eMid&&s.eMid>0);if(hasEst){const ei={};ns.forEach(s=>{ei[s.id]={price:s.eMid||0,included:s.eMid>0,notes:s.status==="estimated"?"AI estimated":""}});const et={id:"t_est",name:"AI Estimate ("+(nd.location||"")+")",submitted:new Date().toISOString().slice(0,10),totalPrice:ns.reduce((s,i)=>s+(i.eMid||0),0),status:"estimated",items:ei};const existEst=nd.tenders.find(t=>t.id==="t_est");nd.tenders=existEst?nd.tenders.map(t=>t.id==="t_est"?et:t):[et,...nd.tenders]}try{localStorage.setItem(projKey(localStorage.getItem(APK)||"proj-demo"),JSON.stringify(nd))}catch(e){}return nd})}
+function applyEstimates(estimates){setData(prev=>{const ns=prev.specItems.map(s=>{const est=estimates[s.id];if(!est)return s;return{...s,eLow:est.eLow||0,eMid:est.eMid||0,eHigh:est.eHigh||0,status:"estimated",components:(est.components||[]).map(c=>({description:c.description||"",qty:String(c.qty||"1"),unitCost:c.unitCost!=null?c.unitCost:null,subtotal:c.subtotal||0}))}});const nd={...prev,specItems:ns};const hasEst=ns.some(s=>s.eMid&&s.eMid>0);if(hasEst){const ei={};ns.forEach(s=>{ei[s.id]={price:s.eMid||0,included:s.eMid>0,notes:s.status==="estimated"?"AI estimated":""}});const et={id:"t_est",name:"AI Estimate ("+(nd.location||"")+")",submitted:new Date().toISOString().slice(0,10),totalPrice:ns.reduce((s,i)=>s+(i.eMid||0),0),status:"estimated",items:ei};const existEst=nd.tenders.find(t=>t.id==="t_est");nd.tenders=existEst?nd.tenders.map(t=>t.id==="t_est"?et:t):[et,...nd.tenders]}try{const ap=localStorage.getItem(APK)||"proj-demo";localStorage.setItem(projKey(ap),JSON.stringify(nd));debouncedCloudSave(ap,nd)}catch(e){}return nd})}
 
 async function estimateItem(si){if(!ak){setShowSet(true);return}if(!data.location){setShowSet(true);setPm("Set your location in Settings for accurate estimates.");return}
 setEstimatingItems(prev=>{const n=new Set(prev);n.add(si.id);return n});setEstimateErrors(prev=>{const n={...prev};delete n[si.id];return n});
@@ -516,6 +598,8 @@ return<div className="min-h-screen bg-zinc-950 text-zinc-300">
 <div className="text-sm text-zinc-400 mb-2">Estimate Location</div><input value={data.location||""} onChange={e=>save({...data,location:e.target.value})} placeholder="e.g. Surrey, West London" className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-300 mb-4"/>
 <div className="text-xs text-zinc-600 mb-4">API key stored locally. Location used to tune AI cost estimates to your area.</div>
 <div className="border-t border-zinc-800 pt-4 mb-4"><div className="text-sm text-zinc-400 mb-3">Data Export & Backup</div><div className="flex gap-2 flex-wrap"><button onClick={()=>{exportExcel(data,st,cv,ot,tt,tcp,tp,ba,ca,br,scs);}} className="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-zinc-950 rounded text-sm font-medium">Export to Excel</button><button onClick={()=>exportJSON(data,data.projectName)} className="px-3 py-2 bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded text-sm">Export JSON</button><button onClick={()=>document.getElementById("jsonImportInput").click()} className="px-3 py-2 bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded text-sm">Import JSON</button></div><input id="jsonImportInput" type="file" accept=".json" className="hidden" onChange={e=>{if(e.target.files[0])importJSON(e.target.files[0],save);e.target.value=""}}/><div className="text-xs text-zinc-600 mt-2">Excel: multi-tab workbook with all project data. JSON: full backup for transfer between devices.</div></div>
+<div className="border-t border-zinc-800 pt-4 mb-4"><div className="text-sm text-zinc-400 mb-3">Cloud Sync</div><div className="flex items-center gap-2 mb-2"><span className={"w-2.5 h-2.5 rounded-full flex-shrink-0 "+(syncStatus==="saved"?"bg-emerald-400":syncStatus==="saving"?"bg-amber-400 ps":syncStatus==="error"?"bg-red-400":syncStatus==="offline"?"bg-zinc-500":"bg-zinc-600")}/><span className="text-sm text-zinc-300">{syncStatus==="saved"?"Synced":syncStatus==="saving"?"Saving...":syncStatus==="error"?"Sync error":syncStatus==="offline"?"Offline":"Up to date"}</span></div><div className="text-xs text-zinc-600">Logged in as {session.user.email}</div></div>
+<div className="border-t border-zinc-800 pt-4 mb-4"><button onClick={()=>{setShowSet(false);onSignOut()}} className="px-4 py-2 bg-red-900/30 hover:bg-red-900/50 text-red-400 border border-red-800/50 rounded text-sm font-medium">Sign Out</button></div>
 <button onClick={()=>setShowSet(false)} className="px-4 py-2 bg-zinc-800 text-zinc-300 rounded text-sm hover:bg-zinc-700">Close</button></div></div>}
 <div className="border-b border-zinc-800 bg-zinc-950/95 sticky top-0 z-10 backdrop-blur-sm"><div className="max-w-6xl mx-auto px-4">
 <div className="flex items-center justify-between py-3"><div className="flex items-center gap-3"><div className="w-8 h-8 rounded bg-amber-500/20 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-amber-400"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/></svg></div><div className="relative">{renameProjId===activeProject?<div><input defaultValue={data.projectName} onBlur={e=>renameProject(activeProject,e.target.value)} onKeyDown={e=>{if(e.key==="Enter")renameProject(activeProject,e.target.value);if(e.key==="Escape")setRenameProjId(null)}} className="text-base font-bold bg-zinc-800 border border-zinc-600 rounded px-2 py-0.5 text-zinc-100 w-48" autoFocus/><div className="text-xs text-zinc-600 mt-0.5">Renovation Tracker · {data.location||"Set location"}</div></div>:<button onClick={()=>setShowProjMenu(!showProjMenu)} className="text-left"><div className="text-base font-bold text-zinc-100 flex items-center gap-1.5">{data.projectName}<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={"w-3.5 h-3.5 text-zinc-500 transition-transform "+(showProjMenu?"rotate-180":"")}><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd"/></svg><span onClick={e=>{e.stopPropagation();setRenameProjId(activeProject);setShowProjMenu(false)}} className="text-zinc-600 hover:text-zinc-400" title="Rename project"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3"><path d="M13.488 2.513a1.75 1.75 0 00-2.475 0L3.05 10.476a.75.75 0 00-.19.336l-.893 3.26a.75.75 0 00.92.92l3.26-.893a.75.75 0 00.336-.19l7.963-7.963a1.75 1.75 0 000-2.475l-.958-.958zm-1.414 1.06a.25.25 0 01.354 0l.958.959a.25.25 0 010 .353L5.62 12.652l-1.907.522.522-1.907 7.839-7.839v.146z"/></svg></span></div><div className="text-xs text-zinc-600">Renovation Tracker · {data.location||"Set location"}</div></button>}
@@ -529,5 +613,5 @@ return<div className="min-h-screen bg-zinc-950 text-zinc-300">
 </div></div>
 <div className="max-w-6xl mx-auto px-4 py-6">{tab==="dashboard"&&rDash()}{tab==="comparison"&&rComp()}{tab==="milestones"&&rMile()}{tab==="owner"&&rOwner()}{tab==="scenarios"&&rScen()}</div>
 </div>}
-ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+ReactDOM.createRoot(document.getElementById("root")).render(<AuthGate/>);
 </script></body></html>

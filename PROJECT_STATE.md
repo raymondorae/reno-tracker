@@ -8,10 +8,11 @@
 
 **App:** Renovation Budget & Project Tracker
 **Type:** Static single-page web app (no build step)
-**Stack:** HTML, React 18 (CDN, production builds), Tailwind CSS (CDN), Babel standalone
+**Stack:** HTML, React 18 (CDN, production builds), Tailwind CSS (CDN), Babel standalone, Supabase JS v2 (CDN)
 **Hosting:** Vercel (static deployment via GitHub auto-deploy)
 **Repo:** github.com/raymondorae/reno-tracker
-**Data persistence:** Browser localStorage (multi-project: `reno-tracker-projects`, `reno-tracker-active-project`, `reno-tracker-proj-{id}`)
+**Auth:** Supabase Auth (shared with Homegrown app on `ddokpzadckyyzolopkai.supabase.co`)
+**Data persistence:** Supabase `reno_projects` table (primary) + browser localStorage (cache/offline fallback)
 **Currency:** GBP (UK-based user)
 
 ---
@@ -44,12 +45,20 @@ Single-file architecture — all React components, default data, and styling liv
 | Multi-Project | Live | Create, switch, delete, rename projects. Per-project data isolation. Auto-migration from old format. |
 | Data Export | Live | Excel (.xlsx) multi-tab export, JSON backup/restore via Settings modal |
 | Scenarios | Live | What-if modelling, toggle items per scenario, budget impact calculation |
+| Auth & Cloud Sync | Live | Supabase auth (login/signup), cloud persistence with 2s debounced save, localStorage cache, offline fallback, automatic migration |
 
 ---
 
 ## Data Model
 
-Multi-project architecture using three localStorage key types:
+### Supabase (primary — cloud)
+
+- **`reno_projects`** table — One row per user per project:
+  - `id` (UUID PK), `user_id` (FK → auth.users), `project_id` (TEXT, e.g. `"proj-demo"`), `name` (TEXT), `data` (JSONB — full project data), `created_at`, `updated_at`
+  - `UNIQUE(user_id, project_id)` — enables upsert by client-side ID
+  - Row Level Security: users can only CRUD their own rows
+
+### localStorage (cache / offline fallback)
 
 - **`reno-tracker-projects`** — Array of project metadata: `{id, name, createdAt, isDemo}`
 - **`reno-tracker-active-project`** — ID of the currently active project
@@ -62,9 +71,14 @@ Multi-project architecture using three localStorage key types:
   - **specDocuments** — Uploaded spec document files (base64 data URLs)
   - **tenderDocuments** — Uploaded tender files with builderName label
   - **location** — User's area for location-based cost estimates (per-project)
-- **`reno-tracker-ak`** — Anthropic API key (global, shared across all projects)
+- **`reno-tracker-ak`** — Anthropic API key (per-device, not per-account, persists across sign-out/sign-in)
 
-Auto-migration from old `reno-tracker-v2` single-key format creates a "Demo Project" and moves existing data on first load.
+### Data flow
+
+1. On login: fetch all projects from Supabase → cache to localStorage. If Supabase is empty but localStorage has data → migrate to Supabase.
+2. On save: write to localStorage immediately → debounced (2s) upsert to Supabase.
+3. On switch project: fetch from Supabase first → fall back to localStorage if offline.
+4. On create/delete/rename: localStorage immediate + fire-and-forget Supabase sync.
 
 ---
 
@@ -88,7 +102,7 @@ This runs entirely client-side. No backend needed. User provides their own Anthr
 |----------|-----------|
 | Single HTML file | Zero build complexity, instant Vercel deploy, easy to maintain |
 | CDN dependencies | No node_modules, no version drift in lockfiles |
-| localStorage (multi-project) | Free, zero-infra, works offline. Per-project data isolation. Trade-off: no cross-device sync |
+| Supabase + localStorage | Cloud persistence for cross-device sync, localStorage as cache and offline fallback. Shared Supabase project with Homegrown app for single sign-on. |
 | Sample data pre-loaded | User can explore immediately, replace with real data later |
 | GBP currency | UK-based user |
 | Client-side Anthropic API | No backend to manage, runs in browser. User supplies API key via Settings modal (global, shared across projects). |
@@ -102,8 +116,10 @@ This runs entirely client-side. No backend needed. User provides their own Anthr
 
 ## Current State
 
-- **Version:** 1.7.1
+- **Version:** 2.0.0
 - **Last updated:** 2026-03-10
+- **Auth:** Supabase login/signup (shared with Homegrown app). AuthGate component wraps App — no session = login screen.
+- **Cloud sync:** All project data persisted to Supabase `reno_projects` table with 2s debounced saves. localStorage used as cache and offline fallback. Existing localStorage data auto-migrated on first login. Sync status indicator in Settings.
 - **Multi-project:** Create, switch, delete, rename independent projects. Auto-migration from old single-key format. Demo project included by default. Blank projects start empty with graceful empty states across all tabs.
 - **Sample data:** 18 spec items (with eLow/eMid/eHigh estimates), 3 sample tenders, 9 milestones, 9 owner-supplied items (with Budget/Mid/Premium tiers), 4 scenarios
 - **AI features:** Two-mode spec parsing (extract-only or with estimates), selective per-item/section/bulk AI estimation with progress, manual estimate entry via inline editing, tender parsing, location-based estimates, AI Estimate tender auto-generation
@@ -124,6 +140,7 @@ This runs entirely client-side. No backend needed. User provides their own Anthr
 7. ~~FEAT-021: Two-mode spec parsing, selective estimation, manual entry~~ — Done (v1.6.0)
 8. ~~FEAT-024: Budget & contingency editing~~ — Done (v1.7.0)
 9. ~~FEAT-001: Excel & JSON export~~ — Done (v1.7.1)
-10. FEAT-006: Add/edit/delete scenarios in UI
+10. ~~FEAT-025: Supabase Auth & Cloud Storage~~ — Done (v2.0.0)
+11. FEAT-006: Add/edit/delete scenarios in UI
 11. FEAT-007: Custom milestone editing
 12. FEAT-009: Mobile responsive polish

@@ -11,6 +11,29 @@
 
 ## Changelog
 
+### v2.0.0 — 2026-03-10 (Supabase Auth & Cloud Storage)
+
+- **FEAT-025:** User authentication and cloud persistence — Supabase Auth (shared with Homegrown app on `ddokpzadckyyzolopkai.supabase.co`), cloud storage in `reno_projects` table with RLS, localStorage cache/offline fallback, automatic migration of existing localStorage data on first login.
+- **Breaking change:** New data layer (localStorage → Supabase + localStorage cache). AuthGate wraps App — login required.
+- Supabase JS v2 CDN added.
+- AuthGate component: login/signup screen with zinc/amber theme, tab toggle, email/password auth, error/success messages.
+- Cloud sync: 2-second debounced saves to Supabase after every localStorage write. Sync status indicator (saved/saving/error/offline) in Settings modal.
+- Data loading: Supabase-first with localStorage fallback. On first login with existing localStorage data, all projects migrated to Supabase with user notification.
+- Project operations (create/delete/rename/switch) sync to Supabase.
+- Settings modal: cloud sync status section with coloured indicator dot, sign-out button.
+- API key (`reno-tracker-ak`) remains per-device in localStorage, not synced to cloud.
+- Online/offline detection updates sync status automatically.
+
+### FEAT-025 — done (Supabase Auth & Cloud Storage)
+
+- **AuthGate component:** Separate wrapper that owns auth state. Renders login/signup screen when no session, mounts App with `session` and `onSignOut` props when authenticated. App unmounts/remounts on auth change for clean data loading.
+- **Auth flow:** `sb.auth.getSession()` on mount, `sb.auth.onAuthStateChange()` for ongoing updates. Sign-up shows "Check your email" confirmation message. Sign-out clears session and returns to login.
+- **Cloud persistence:** `reno_projects` table with `UNIQUE(user_id, project_id)` constraint for upsert-by-client-ID. Row Level Security ensures users only access their own data. `name` column denormalised from JSONB for listing.
+- **Debounced save:** `supabaseSave()` upserts to Supabase, wrapped by `debouncedCloudSave()` with 2-second timeout. `save()` calls localStorage immediately then `debouncedCloudSave()`. Cleanup effect cancels pending saves on unmount (sign-out).
+- **Loading flow:** Fetch from Supabase first. If rows exist → load most recent, cache all to localStorage. If no rows → check localStorage for migration → upsert all to Supabase. If Supabase errors → fall back to localStorage.
+- **Project operations:** `switchProject` fetches from Supabase first (fallback localStorage). `createProject` fires-and-forgets upsert. `deleteProject` fires-and-forgets delete. `renameProject` updates name column for non-active projects.
+- **Settings UI:** Sync status dot (green=saved, amber-pulsing=saving, red=error, grey=offline). User email display. Red-tinted Sign Out button.
+
 ### v1.7.1 — 2026-03-10 (Excel & JSON Export)
 
 - **FEAT-001:** Data export and backup — Excel (.xlsx) multi-tab export with Dashboard, Tenders, Milestones, Owner Supplied, and Scenarios tabs. JSON backup export and import for device transfer. All accessible from Settings modal.
@@ -201,7 +224,7 @@
 | FEAT-020 | high | done | Component breakdown for spec items and tenders | Part 1: data model + AI parsing + merge modal label. Part 2: expandable sub-rows in comparison matrix with tender component comparison. | 2026-03-10 |
 | FEAT-021 | high | done | Two-mode spec parsing, selective estimation & manual entry | Part 1: two parse buttons, manual status, conditional AI Estimate tender. Part 2: per-item, per-section, and bulk estimation with progress. Part 3: inline manual estimate editing, clear button. | 2026-03-10 |
 | FEAT-024 | high | done | Budget input/editing | Editable budget and contingency % inputs on Dashboard. | 2026-03-10 |
-| FEAT-025 | high | open | User authentication and session persistence | Add login/credential protection so users can safeguard projects and save work across sessions (cloud storage). | 2026-03-10 |
+| FEAT-025 | high | done | User authentication and session persistence | Supabase Auth + cloud storage, shared auth with Homegrown app, localStorage migration, sync status indicator | 2026-03-10 |
 | FEAT-026 | medium | open | Link to Homegrown app | Shared login page with home screen showing both Renovation Tracker and Homegrown app options. | 2026-03-10 |
 | FEAT-027 | high | open | Minimise AI token costs | Investigate: batching, caching parsed results, using Haiku for extraction and Sonnet only for estimates, reducing prompt size, client-side caching of AI responses. | 2026-03-10 |
 | FEAT-028 | medium | open | Google Docs and MS Word (.docx) upload support | Currently only PDF and images accepted. Add client-side text extraction from .docx files and Google Docs links. | 2026-03-10 |
@@ -234,6 +257,7 @@
 | FEAT-024 | Budget & contingency editing | Inline editable budget (£) and contingency (%) inputs on Dashboard. Production React builds. DEBUG-gated console output. | 2026-03-10 |
 | FEAT-001 | Excel & JSON export/import | Multi-tab Excel (.xlsx) export with 5 tabs, JSON backup/restore, Import with validation — all in Settings modal | 2026-03-10 |
 | BUG-008 | Budget input not editable | Moved budget/contingency editing from tier card header into the Total Budget summary card where users expect it. | 2026-03-10 |
+| FEAT-025 | User authentication and cloud storage | Supabase Auth (shared with Homegrown app), cloud persistence in reno_projects table with RLS, localStorage cache/offline fallback, debounced sync, automatic migration, sync status indicator. v2.0.0. | 2026-03-10 |
 
 ---
 
