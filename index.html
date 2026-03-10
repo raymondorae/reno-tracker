@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Renovation Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['DM Sans', 'system-ui', 'sans-serif'], mono: ['DM Mono', 'monospace'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'DM Sans', system-ui, sans-serif; }
+    .tabular-nums { font-variant-numeric: tabular-nums; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #52525b; }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type="number"] { -moz-appearance: textfield; }
+  </style>
+</head>
+<body class="bg-zinc-950 text-zinc-300 min-h-screen">
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useCallback, useMemo } = React;
+
+    const STORAGE_KEY = "reno-tracker-v2";
+
+    const defaultData = {
+      projectName: "My Renovation",
+      totalBudget: 250000,
+      contingencyPct: 15,
+      specItems: [
+        { id: 1, category: "Demolition", item: "Strip out existing kitchen", unit: "item", qty: 1, specNotes: "Full removal inc. disposal" },
+        { id: 2, category: "Demolition", item: "Strip out bathroom x2", unit: "item", qty: 2, specNotes: "Full removal inc. disposal" },
+        { id: 3, category: "Structural", item: "Steel beam — kitchen knock-through", unit: "item", qty: 1, specNotes: "RSJ per engineer spec" },
+        { id: 4, category: "Structural", item: "Underpinning to rear wall", unit: "lm", qty: 6, specNotes: "As per structural engineer report" },
+        { id: 5, category: "Electrical", item: "Full rewire", unit: "item", qty: 1, specNotes: "Consumer unit + all circuits" },
+        { id: 6, category: "Electrical", item: "Lighting — kitchen spots x12", unit: "item", qty: 12, specNotes: "LED downlights, dimmable" },
+        { id: 7, category: "Plumbing", item: "First fix plumbing", unit: "item", qty: 1, specNotes: "All hot/cold runs, waste" },
+        { id: 8, category: "Plumbing", item: "Underfloor heating — ground floor", unit: "sqm", qty: 45, specNotes: "Wet system, zoned" },
+        { id: 9, category: "Plastering", item: "Re-plaster throughout", unit: "sqm", qty: 280, specNotes: "Skim finish to all walls" },
+        { id: 10, category: "Kitchen", item: "Kitchen install", unit: "item", qty: 1, specNotes: "Units, worktop, splashback" },
+        { id: 11, category: "Bathrooms", item: "Family bathroom fit-out", unit: "item", qty: 1, specNotes: "Full tile, sanitaryware, screen" },
+        { id: 12, category: "Bathrooms", item: "En-suite fit-out", unit: "item", qty: 1, specNotes: "Walk-in shower, vanity, WC" },
+        { id: 13, category: "Flooring", item: "Engineered oak — ground floor", unit: "sqm", qty: 45, specNotes: "180mm wide plank, oiled" },
+        { id: 14, category: "Flooring", item: "Carpet — bedrooms + stairs", unit: "sqm", qty: 60, specNotes: "80% wool twist, underlay" },
+        { id: 15, category: "Decoration", item: "Full decoration throughout", unit: "item", qty: 1, specNotes: "2 coats emulsion walls, satinwood woodwork" },
+        { id: 16, category: "External", item: "Patio / landscaping", unit: "item", qty: 1, specNotes: "Porcelain paving 30sqm + turf" },
+        { id: 17, category: "Windows", item: "Replace all windows x8", unit: "item", qty: 8, specNotes: "Aluminium double-glazed, anthracite" },
+        { id: 18, category: "Roofing", item: "Flat roof to rear extension", unit: "sqm", qty: 20, specNotes: "EPDM membrane, 20yr guarantee" },
+      ],
+      tenders: [
+        {
+          id: "t1", name: "Builder A — Smith & Sons", submitted: "2026-03-01", totalPrice: 228000,
+          items: {
+            1: { price: 4500, included: true, notes: "" },
+            2: { price: 6000, included: true, notes: "" },
+            3: { price: 8500, included: true, notes: "" },
+            4: { price: 12000, included: true, notes: "" },
+            5: { price: 9500, included: true, notes: "" },
+            6: { price: 3600, included: true, notes: "" },
+            7: { price: 7200, included: true, notes: "" },
+            8: { price: 11500, included: true, notes: "Quoted for 40sqm not 45" },
+            9: { price: 14000, included: true, notes: "" },
+            10: { price: 22000, included: true, notes: "Install only — kitchen owner-supplied" },
+            11: { price: 18000, included: true, notes: "" },
+            12: { price: 14000, included: true, notes: "" },
+            13: { price: 8500, included: true, notes: "Supply & fit" },
+            14: { price: 5500, included: true, notes: "" },
+            15: { price: 12000, included: true, notes: "" },
+            16: { price: 15000, included: true, notes: "" },
+            17: { price: 32000, included: true, notes: "" },
+            18: { price: 9200, included: true, notes: "" },
+          }
+        },
+        {
+          id: "t2", name: "Builder B — ProBuild Ltd", submitted: "2026-03-05", totalPrice: 195000,
+          items: {
+            1: { price: 3800, included: true, notes: "" },
+            2: { price: 5200, included: true, notes: "" },
+            3: { price: 7800, included: true, notes: "Excludes padstones" },
+            4: { price: 0, included: false, notes: "NOT INCLUDED — says specialist needed" },
+            5: { price: 8800, included: true, notes: "" },
+            6: { price: 2800, included: true, notes: "Non-dimmable quoted" },
+            7: { price: 6500, included: true, notes: "" },
+            8: { price: 9000, included: true, notes: "" },
+            9: { price: 12500, included: true, notes: "" },
+            10: { price: 18000, included: true, notes: "Install only" },
+            11: { price: 15500, included: true, notes: "Tiling to half height only" },
+            12: { price: 11000, included: true, notes: "Shower tray not walk-in" },
+            13: { price: 7200, included: true, notes: "Supply & fit — 150mm plank" },
+            14: { price: 4800, included: true, notes: "Synthetic carpet" },
+            15: { price: 10500, included: true, notes: "" },
+            16: { price: 0, included: false, notes: "NOT INCLUDED" },
+            17: { price: 28000, included: true, notes: "uPVC not aluminium" },
+            18: { price: 8500, included: true, notes: "" },
+          }
+        },
+        {
+          id: "t3", name: "Builder C — Heritage Homes", submitted: "2026-03-08", totalPrice: 268000,
+          items: {
+            1: { price: 5200, included: true, notes: "Inc. skip hire" },
+            2: { price: 7000, included: true, notes: "Inc. skip hire" },
+            3: { price: 9200, included: true, notes: "Inc. padstones + Acrow hire" },
+            4: { price: 14500, included: true, notes: "" },
+            5: { price: 11000, included: true, notes: "Inc. smart home wiring prep" },
+            6: { price: 4200, included: true, notes: "Dimmable LED, warm white 3000K" },
+            7: { price: 8000, included: true, notes: "" },
+            8: { price: 13500, included: true, notes: "45sqm as spec, multi-zone" },
+            9: { price: 16000, included: true, notes: "" },
+            10: { price: 25000, included: true, notes: "Install only" },
+            11: { price: 22000, included: true, notes: "Full height tiling, niche shelving" },
+            12: { price: 16500, included: true, notes: "Walk-in as spec, frameless screen" },
+            13: { price: 9800, included: true, notes: "180mm wide as spec, Bona finish" },
+            14: { price: 6200, included: true, notes: "80/20 wool as spec" },
+            15: { price: 14000, included: true, notes: "Inc. feature wallpaper allowance" },
+            16: { price: 18500, included: true, notes: "Inc. drainage and retaining wall" },
+            17: { price: 38000, included: true, notes: "Aluminium as spec, triple glazed upgrade" },
+            18: { price: 10500, included: true, notes: "Firestone EPDM, 25yr guarantee" },
+          }
+        }
+      ],
+      milestones: [
+        { id: "m1", name: "Deposit / Mobilisation", pctOfContract: 10, dueDate: "2026-04-01", status: "pending", paidAmount: 0 },
+        { id: "m2", name: "Demolition & Strip Out Complete", pctOfContract: 10, dueDate: "2026-04-20", status: "pending", paidAmount: 0 },
+        { id: "m3", name: "Structural Works Complete", pctOfContract: 15, dueDate: "2026-05-15", status: "pending", paidAmount: 0 },
+        { id: "m4", name: "First Fix (Electrics, Plumbing, UFH)", pctOfContract: 20, dueDate: "2026-06-15", status: "pending", paidAmount: 0 },
+        { id: "m5", name: "Plastering & Screed Complete", pctOfContract: 10, dueDate: "2026-07-01", status: "pending", paidAmount: 0 },
+        { id: "m6", name: "Second Fix & Kitchen Install", pctOfContract: 15, dueDate: "2026-08-01", status: "pending", paidAmount: 0 },
+        { id: "m7", name: "Flooring, Bathrooms & Decoration", pctOfContract: 10, dueDate: "2026-09-01", status: "pending", paidAmount: 0 },
+        { id: "m8", name: "Snagging & Final Completion", pctOfContract: 5, dueDate: "2026-09-15", status: "pending", paidAmount: 0 },
+        { id: "m9", name: "Retention Release (90 days)", pctOfContract: 5, dueDate: "2026-12-15", status: "pending", paidAmount: 0 },
+      ],
+      ownerSupplied: [
+        { id: "os1", item: "Kitchen units & worktop", supplier: "Howdens", budget: 12000, actual: 0, ordered: false, delivered: false, notes: "Shaker style, quartz top" },
+        { id: "os2", item: "Kitchen appliances (oven, hob, extractor, dishwasher, fridge)", supplier: "AO.com", budget: 5500, actual: 0, ordered: false, delivered: false, notes: "Bosch / Neff range" },
+        { id: "os3", item: "Bathroom sanitaryware — family", supplier: "Victorian Plumbing", budget: 3500, actual: 0, ordered: false, delivered: false, notes: "Bath, basin, WC, shower" },
+        { id: "os4", item: "Bathroom sanitaryware — en-suite", supplier: "Victorian Plumbing", budget: 2800, actual: 0, ordered: false, delivered: false, notes: "Walk-in tray, vanity, WC" },
+        { id: "os5", item: "Tiles — bathrooms", supplier: "Mandarin Stone", budget: 3000, actual: 0, ordered: false, delivered: false, notes: "Porcelain large format" },
+        { id: "os6", item: "Internal doors x10", supplier: "Howdens", budget: 2500, actual: 0, ordered: false, delivered: false, notes: "Oak veneer, pre-finished" },
+        { id: "os7", item: "Door handles / ironmongery", supplier: "From The Anvil", budget: 1200, actual: 0, ordered: false, delivered: false, notes: "Matt black throughout" },
+        { id: "os8", item: "Light fittings", supplier: "TBC", budget: 2000, actual: 0, ordered: false, delivered: false, notes: "Pendants, wall lights, exterior" },
+        { id: "os9", item: "Radiators (if not UFH upstairs)", supplier: "TBC", budget: 1800, actual: 0, ordered: false, delivered: false, notes: "Column rads, anthracite" },
+      ],
+      scenarios: [
+        { id: "s1", name: "Full spec as planned", itemsIncluded: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18], ownerItemsIncluded: ["os1","os2","os3","os4","os5","os6","os7","os8","os9"], active: true },
+        { id: "s2", name: "Defer patio & landscaping", itemsIncluded: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,17,18], ownerItemsIncluded: ["os1","os2","os3","os4","os5","os6","os7","os8","os9"], active: false },
+        { id: "s3", name: "Defer patio + keep existing windows", itemsIncluded: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,18], ownerItemsIncluded: ["os1","os2","os3","os4","os5","os6","os7","os8","os9"], active: false },
+        { id: "s4", name: "Budget trim — basic finishes + defer patio", itemsIncluded: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,18], ownerItemsIncluded: ["os1","os2","os3","os4","os5","os6","os7","os8"], active: false },
+      ],
+      selectedTender: "t1",
+    };
+
+    const fmt = (n) => {
+      if (n === undefined || n === null) return "—";
+      return new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
+    };
+
+    const pct = (n) => Math.round(n) + "%";
+
+    const CATS = ["Demolition","Structural","Electrical","Plumbing","Plastering","Kitchen","Bathrooms","Flooring","Decoration","External","Windows","Roofing"];
+
+    const StatusBadge = ({ status }) => {
+      const colors = {
+        pending: "bg-amber-900/40 text-amber-300 border border-amber-700/50",
+        paid: "bg-emerald-900/40 text-emerald-300 border border-emerald-700/50",
+        overdue: "bg-red-900/40 text-red-300 border border-red-700/50",
+        partial: "bg-blue-900/40 text-blue-300 border border-blue-700/50",
+      };
+      return <span className={"px-2 py-0.5 rounded text-xs font-medium tracking-wide uppercase " + (colors[status] || colors.pending)}>{status}</span>;
+    };
+
+    const Tab = ({ label, active, onClick, count }) => (
+      <button
+        onClick={onClick}
+        className={"px-4 py-2.5 text-sm font-medium tracking-wide transition-all relative whitespace-nowrap " +
+          (active ? "text-amber-300 border-b-2 border-amber-400" : "text-zinc-500 hover:text-zinc-300 border-b-2 border-transparent")}
+      >
+        {label}
+        {count !== undefined && (
+          <span className={"ml-1.5 text-xs px-1.5 py-0.5 rounded-full " + (active ? "bg-amber-400/20 text-amber-300" : "bg-zinc-800 text-zinc-500")}>{count}</span>
+        )}
+      </button>
+    );
+
+    const Card = ({ children, className = "" }) => (
+      <div className={"bg-zinc-900/80 border border-zinc-800 rounded-lg " + className}>{children}</div>
+    );
+
+    const WarningIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-amber-400 inline-block mr-1 flex-shrink-0">
+        <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 6a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 6zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+      </svg>
+    );
+
+    const CheckIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-emerald-400">
+        <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
+      </svg>
+    );
+
+    const XIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-red-400">
+        <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+      </svg>
+    );
+
+    function RenovationTracker() {
+      const [data, setData] = useState(null);
+      const [activeTab, setActiveTab] = useState("dashboard");
+      const [loading, setLoading] = useState(true);
+
+      useEffect(() => {
+        try {
+          const stored = localStorage.getItem(STORAGE_KEY);
+          if (stored) {
+            setData(JSON.parse(stored));
+          } else {
+            setData(defaultData);
+          }
+        } catch (e) {
+          setData(defaultData);
+        }
+        setLoading(false);
+      }, []);
+
+      const save = useCallback((newData) => {
+        setData(newData);
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+        } catch (e) {
+          console.error("Save failed:", e);
+        }
+      }, []);
+
+      const selectedTender = useMemo(() => {
+        if (!data) return null;
+        return data.tenders.find(t => t.id === data.selectedTender) || data.tenders[0];
+      }, [data]);
+
+      const contractValue = useMemo(() => {
+        if (!selectedTender) return 0;
+        return Object.values(selectedTender.items).reduce((s, i) => s + (i.included ? i.price : 0), 0);
+      }, [selectedTender]);
+
+      const ownerSuppliedTotal = useMemo(() => {
+        if (!data) return { budget: 0, actual: 0 };
+        return {
+          budget: data.ownerSupplied.reduce((s, i) => s + i.budget, 0),
+          actual: data.ownerSupplied.reduce((s, i) => s + i.actual, 0),
+        };
+      }, [data]);
+
+      if (loading || !data) {
+        return (
+          <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+            <div className="text-zinc-400 text-lg tracking-wide">Loading tracker...</div>
+          </div>
+        );
+      }
+
+      const totalProjectCost = contractValue + ownerSuppliedTotal.budget;
+      const contingencyAmount = Math.round(data.totalBudget * data.contingencyPct / 100);
+      const budgetAvailable = data.totalBudget - contingencyAmount;
+      const budgetRemaining = budgetAvailable - totalProjectCost;
+      const totalPaid = data.milestones.reduce((s, m) => s + m.paidAmount, 0);
+
+      const tenderFlags = [];
+      data.tenders.forEach(t => {
+        data.specItems.forEach(si => {
+          const ti = t.items[si.id];
+          if (!ti || !ti.included) {
+            tenderFlags.push({ tender: t.name, tenderId: t.id, item: si.item, itemId: si.id, type: "missing", detail: ti ? ti.notes || "Not included in tender" : "Not included in tender" });
+          } else if (ti.notes && ti.notes.length > 0) {
+            tenderFlags.push({ tender: t.name, tenderId: t.id, item: si.item, itemId: si.id, type: "deviation", detail: ti.notes });
+          }
+        });
+      });
+
+      const scenarioCosts = data.scenarios.map(sc => {
+        const builderCost = sc.itemsIncluded.reduce((s, itemId) => {
+          const ti = selectedTender ? selectedTender.items[itemId] : null;
+          return s + (ti && ti.included ? ti.price : 0);
+        }, 0);
+        const ownerCost = sc.ownerItemsIncluded.reduce((s, osId) => {
+          const os = data.ownerSupplied.find(o => o.id === osId);
+          return s + (os ? os.budget : 0);
+        }, 0);
+        const total = builderCost + ownerCost;
+        const withinBudget = total <= budgetAvailable;
+        const savings = totalProjectCost - total;
+        return { ...sc, builderCost, ownerCost, total, withinBudget, savings };
+      });
+
+      const renderDashboard = () => (
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { label: "Total Budget", value: fmt(data.totalBudget), sub: "inc. " + pct(data.contingencyPct) + " contingency", color: "text-zinc-100" },
+              { label: "Project Cost", value: fmt(totalProjectCost), sub: "Builder " + fmt(contractValue) + " + Owner " + fmt(ownerSuppliedTotal.budget), color: totalProjectCost > budgetAvailable ? "text-red-400" : "text-emerald-400" },
+              { label: "Budget Remaining", value: fmt(budgetRemaining), sub: "of " + fmt(budgetAvailable) + " available", color: budgetRemaining < 0 ? "text-red-400" : "text-emerald-400" },
+              { label: "Total Paid", value: fmt(totalPaid), sub: pct(contractValue ? totalPaid / contractValue * 100 : 0) + " of contract", color: "text-amber-300" },
+            ].map((c, i) => (
+              <Card key={i} className="p-4">
+                <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">{c.label}</div>
+                <div className={"text-xl font-bold tabular-nums " + c.color}>{c.value}</div>
+                <div className="text-xs text-zinc-600 mt-1">{c.sub}</div>
+              </Card>
+            ))}
+          </div>
+
+          <Card className="p-4">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs text-zinc-500 uppercase tracking-wider">Budget Utilisation</span>
+              <span className="text-xs text-zinc-400">{pct(totalProjectCost / budgetAvailable * 100)} of available budget</span>
+            </div>
+            <div className="h-5 bg-zinc-800 rounded-full overflow-hidden flex">
+              <div className="bg-amber-500/80 h-full transition-all" style={{ width: Math.min(100, contractValue / data.totalBudget * 100) + "%" }} />
+              <div className="bg-blue-500/60 h-full transition-all" style={{ width: Math.min(100 - contractValue / data.totalBudget * 100, ownerSuppliedTotal.budget / data.totalBudget * 100) + "%" }} />
+              <div className="bg-zinc-700/60 h-full transition-all" style={{ width: data.contingencyPct + "%" }} />
+            </div>
+            <div className="flex gap-4 mt-2 text-xs text-zinc-500">
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />Builder Contract</span>
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-500/60" />Owner Supplied</span>
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-zinc-700/60" />Contingency</span>
+            </div>
+          </Card>
+
+          <Card className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs text-zinc-500 uppercase tracking-wider">Selected Tender</span>
+              <select value={data.selectedTender} onChange={e => save({ ...data, selectedTender: e.target.value })}
+                className="bg-zinc-800 border border-zinc-700 text-zinc-300 text-sm rounded px-2 py-1">
+                {data.tenders.map(t => <option key={t.id} value={t.id}>{t.name} — {fmt(t.totalPrice)}</option>)}
+              </select>
+            </div>
+            <div className="text-lg font-bold text-zinc-100">{selectedTender ? selectedTender.name : ""}</div>
+            <div className="text-sm text-zinc-400 mt-1">Quoted: {fmt(selectedTender ? selectedTender.totalPrice : 0)} · Line items total: {fmt(contractValue)}</div>
+          </Card>
+
+          {tenderFlags.filter(f => f.tenderId === data.selectedTender).length > 0 && (
+            <Card className="p-4">
+              <div className="text-xs text-zinc-500 uppercase tracking-wider mb-3">Issues on Selected Tender</div>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {tenderFlags.filter(f => f.tenderId === data.selectedTender).map((f, i) => (
+                  <div key={i} className={"flex items-start gap-2 text-sm " + (f.type === "missing" ? "text-red-400" : "text-amber-400")}>
+                    {f.type === "missing" ? <XIcon /> : <WarningIcon />}
+                    <div><span className="font-medium">{f.item}</span><span className="text-zinc-500 ml-2">— {f.detail}</span></div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          <Card className="p-4">
+            <div className="text-xs text-zinc-500 uppercase tracking-wider mb-3">Payment Milestones</div>
+            <div className="space-y-2">
+              {data.milestones.map(m => {
+                const due = Math.round(contractValue * m.pctOfContract / 100);
+                const paidPct = due > 0 ? m.paidAmount / due * 100 : 0;
+                return (
+                  <div key={m.id} className="flex items-center gap-3">
+                    <div className="w-40 text-sm text-zinc-400 truncate">{m.name}</div>
+                    <div className="flex-1 h-2 bg-zinc-800 rounded-full overflow-hidden">
+                      <div className={"h-full rounded-full " + (m.status === "paid" ? "bg-emerald-500" : m.paidAmount > 0 ? "bg-blue-500" : "bg-zinc-700")} style={{ width: Math.min(100, paidPct) + "%" }} />
+                    </div>
+                    <div className="w-20 text-right text-sm tabular-nums text-zinc-400">{fmt(due)}</div>
+                    <StatusBadge status={m.status} />
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        </div>
+      );
+
+      const renderComparison = () => (
+        <div className="space-y-4">
+          <Card className="p-4">
+            <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Spec-to-Tender Comparison Matrix</div>
+            <div className="text-sm text-zinc-400 mb-4">Every row is a line from your spec. Flags show where a tender deviates or omits.</div>
+          </Card>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-zinc-800">
+                  <th className="text-left py-2 px-3 text-xs text-zinc-500 uppercase tracking-wider w-16">Cat</th>
+                  <th className="text-left py-2 px-3 text-xs text-zinc-500 uppercase tracking-wider">Spec Item</th>
+                  <th className="text-left py-2 px-3 text-xs text-zinc-500 uppercase tracking-wider w-28">Spec Notes</th>
+                  {data.tenders.map(t => (
+                    <th key={t.id} className={"text-right py-2 px-3 text-xs uppercase tracking-wider w-36 " + (t.id === data.selectedTender ? "text-amber-400" : "text-zinc-500")}>
+                      {t.name.split("—")[0].trim()}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {CATS.map(cat => {
+                  const items = data.specItems.filter(s => s.category === cat);
+                  if (items.length === 0) return null;
+                  return items.map((si, idx) => (
+                    <tr key={si.id} className={"border-b border-zinc-900/50 hover:bg-zinc-900/40 " + (idx === 0 ? "border-t border-zinc-800" : "")}>
+                      {idx === 0 && (
+                        <td rowSpan={items.length} className="py-2 px-3 text-xs text-zinc-600 uppercase tracking-wider align-top font-medium">{cat}</td>
+                      )}
+                      <td className="py-2 px-3 text-zinc-300">{si.item}</td>
+                      <td className="py-2 px-3 text-zinc-600 text-xs">{si.specNotes}</td>
+                      {data.tenders.map(t => {
+                        const ti = t.items[si.id];
+                        const isMissing = !ti || !ti.included;
+                        const hasNote = ti && ti.notes && ti.notes.length > 0;
+                        return (
+                          <td key={t.id} className={"py-2 px-3 text-right " + (t.id === data.selectedTender ? "bg-amber-950/10" : "")}>
+                            {isMissing ? (
+                              <div className="flex items-center justify-end gap-1 text-red-400 text-xs"><XIcon /><span>MISSING</span></div>
+                            ) : (
+                              <div>
+                                <div className={"tabular-nums " + (hasNote ? "text-amber-300" : "text-zinc-300")}>{fmt(ti.price)}</div>
+                                {hasNote && (
+                                  <div className="text-xs text-amber-500/70 mt-0.5 flex items-center justify-end gap-0.5">
+                                    <WarningIcon /><span className="max-w-28 truncate">{ti.notes}</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ));
+                })}
+                <tr className="border-t-2 border-zinc-700 font-bold">
+                  <td colSpan={2} className="py-3 px-3 text-zinc-300 uppercase text-xs tracking-wider">Totals (included items only)</td>
+                  <td></td>
+                  {data.tenders.map(t => {
+                    const total = Object.values(t.items).reduce((s, i) => s + (i.included ? i.price : 0), 0);
+                    return (
+                      <td key={t.id} className={"py-3 px-3 text-right tabular-nums " + (t.id === data.selectedTender ? "text-amber-300" : "text-zinc-300")}>{fmt(total)}</td>
+                    );
+                  })}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <Card className="p-4">
+            <div className="text-xs text-zinc-500 uppercase tracking-wider mb-3">All Flags & Deviations</div>
+            <div className="grid gap-2 max-h-72 overflow-y-auto">
+              {tenderFlags.map((f, i) => (
+                <div key={i} className={"flex items-start gap-2 text-sm rounded px-3 py-2 " + (f.type === "missing" ? "bg-red-950/20 border border-red-900/30" : "bg-amber-950/20 border border-amber-900/30")}>
+                  <div className="mt-0.5">{f.type === "missing" ? <XIcon /> : <WarningIcon />}</div>
+                  <div className="flex-1">
+                    <span className="text-zinc-400 text-xs">{f.tender}</span>
+                    <div className={f.type === "missing" ? "text-red-300" : "text-amber-300"}>{f.item}</div>
+                    <div className="text-zinc-500 text-xs">{f.detail}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      );
+
+      const renderMilestones = () => (
+        <div className="space-y-4">
+          <Card className="p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-1 gap-2">
+              <span className="text-xs text-zinc-500 uppercase tracking-wider">Milestone Payment Tracker</span>
+              <span className="text-sm text-zinc-400">Contract: {fmt(contractValue)} · Paid: {fmt(totalPaid)} · Remaining: {fmt(contractValue - totalPaid)}</span>
+            </div>
+            <div className="h-3 bg-zinc-800 rounded-full overflow-hidden mt-3">
+              <div className="bg-emerald-500 h-full rounded-full transition-all" style={{ width: (contractValue ? totalPaid / contractValue * 100 : 0) + "%" }} />
+            </div>
+            <div className="text-right text-xs text-zinc-500 mt-1">{pct(contractValue ? totalPaid / contractValue * 100 : 0)} paid</div>
+          </Card>
+
+          <div className="space-y-3">
+            {data.milestones.map((m, idx) => {
+              const due = Math.round(contractValue * m.pctOfContract / 100);
+              return (
+                <Card key={m.id} className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-zinc-600 text-xs font-mono">#{idx + 1}</span>
+                        <span className="text-zinc-200 font-medium">{m.name}</span>
+                        <StatusBadge status={m.status} />
+                      </div>
+                      <div className="text-xs text-zinc-500 mt-1">Due: {m.dueDate} · {m.pctOfContract}% of contract</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-lg font-bold tabular-nums text-zinc-200">{fmt(due)}</div>
+                      <div className="text-xs text-zinc-500">Paid: {fmt(m.paidAmount)}</div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-3 flex-wrap">
+                    {["pending", "partial", "paid", "overdue"].map(st => (
+                      <button key={st} onClick={() => {
+                        const newMilestones = data.milestones.map(mm =>
+                          mm.id === m.id ? { ...mm, status: st, paidAmount: st === "paid" ? due : st === "partial" ? Math.round(due * 0.5) : mm.paidAmount } : mm
+                        );
+                        save({ ...data, milestones: newMilestones });
+                      }}
+                        className={"px-2 py-1 rounded text-xs transition-all " +
+                          (m.status === st ? "bg-zinc-700 text-zinc-200 ring-1 ring-zinc-600" : "bg-zinc-900 text-zinc-600 hover:text-zinc-400 hover:bg-zinc-800")}>
+                        {st}
+                      </button>
+                    ))}
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      );
+
+      const renderOwnerSupplied = () => (
+        <div className="space-y-4">
+          <Card className="p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <span className="text-xs text-zinc-500 uppercase tracking-wider">Owner-Supplied Fixtures & Fittings</span>
+              <div className="text-sm text-zinc-400">Budget: {fmt(ownerSuppliedTotal.budget)} · Spent: {fmt(ownerSuppliedTotal.actual)}</div>
+            </div>
+          </Card>
+          <div className="space-y-3">
+            {data.ownerSupplied.map(os => (
+              <Card key={os.id} className="p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="text-zinc-200 font-medium">{os.item}</div>
+                    <div className="text-xs text-zinc-500 mt-0.5">{os.supplier} · {os.notes}</div>
+                    <div className="flex gap-3 mt-2">
+                      <button onClick={() => {
+                        const updated = data.ownerSupplied.map(o => o.id === os.id ? { ...o, ordered: !o.ordered } : o);
+                        save({ ...data, ownerSupplied: updated });
+                      }}
+                        className={"flex items-center gap-1 text-xs px-2 py-1 rounded " +
+                          (os.ordered ? "bg-emerald-900/30 text-emerald-400 border border-emerald-800/50" : "bg-zinc-800 text-zinc-500 border border-zinc-700")}>
+                        {os.ordered ? <CheckIcon /> : null} Ordered
+                      </button>
+                      <button onClick={() => {
+                        const updated = data.ownerSupplied.map(o => o.id === os.id ? { ...o, delivered: !o.delivered } : o);
+                        save({ ...data, ownerSupplied: updated });
+                      }}
+                        className={"flex items-center gap-1 text-xs px-2 py-1 rounded " +
+                          (os.delivered ? "bg-emerald-900/30 text-emerald-400 border border-emerald-800/50" : "bg-zinc-800 text-zinc-500 border border-zinc-700")}>
+                        {os.delivered ? <CheckIcon /> : null} Delivered
+                      </button>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs text-zinc-500">Budget</div>
+                    <div className="text-zinc-200 font-bold tabular-nums">{fmt(os.budget)}</div>
+                    <div className="text-xs text-zinc-500 mt-2">Actual</div>
+                    <input type="number" value={os.actual || ""} placeholder="0"
+                      onChange={e => {
+                        const updated = data.ownerSupplied.map(o => o.id === os.id ? { ...o, actual: Number(e.target.value) || 0 } : o);
+                        save({ ...data, ownerSupplied: updated });
+                      }}
+                      className="w-24 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-right text-sm text-zinc-300 tabular-nums" />
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      );
+
+      const renderScenarios = () => (
+        <div className="space-y-4">
+          <Card className="p-4">
+            <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Scenario Modelling</div>
+            <div className="text-sm text-zinc-400">Toggle spec items on/off per scenario to see budget impact. Based on <strong className="text-zinc-300">{selectedTender ? selectedTender.name : ""}</strong> pricing.</div>
+          </Card>
+          <div className="grid gap-4 md:grid-cols-2">
+            {scenarioCosts.map(sc => (
+              <Card key={sc.id} className={"p-4 " + (sc.withinBudget ? "border-emerald-900/40" : "border-red-900/40")}>
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <div className="text-zinc-200 font-medium">{sc.name}</div>
+                    <div className="text-xs text-zinc-500 mt-0.5">{sc.itemsIncluded.length} of {data.specItems.length} spec items · {sc.ownerItemsIncluded.length} owner items</div>
+                  </div>
+                  <div className={"text-xs px-2 py-1 rounded font-medium " + (sc.withinBudget ? "bg-emerald-900/30 text-emerald-400" : "bg-red-900/30 text-red-400")}>
+                    {sc.withinBudget ? "WITHIN BUDGET" : "OVER BUDGET"}
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3 mb-3">
+                  <div><div className="text-xs text-zinc-600">Builder</div><div className="text-sm font-bold tabular-nums text-amber-300">{fmt(sc.builderCost)}</div></div>
+                  <div><div className="text-xs text-zinc-600">Owner</div><div className="text-sm font-bold tabular-nums text-blue-300">{fmt(sc.ownerCost)}</div></div>
+                  <div><div className="text-xs text-zinc-600">Total</div><div className={"text-sm font-bold tabular-nums " + (sc.withinBudget ? "text-emerald-400" : "text-red-400")}>{fmt(sc.total)}</div></div>
+                </div>
+                <div className="h-2 bg-zinc-800 rounded-full overflow-hidden mb-2">
+                  <div className={"h-full rounded-full transition-all " + (sc.withinBudget ? "bg-emerald-500" : "bg-red-500")}
+                    style={{ width: Math.min(100, sc.total / budgetAvailable * 100) + "%" }} />
+                </div>
+                <div className="flex justify-between text-xs text-zinc-500">
+                  <span>{pct(sc.total / budgetAvailable * 100)} of available budget</span>
+                  <span>{sc.savings > 0 ? "Saves " + fmt(sc.savings) + " vs full spec" : sc.savings === 0 ? "Full spec" : fmt(Math.abs(sc.savings)) + " more than full spec"}</span>
+                </div>
+                <div className="mt-3 pt-3 border-t border-zinc-800">
+                  <div className="text-xs text-zinc-500 mb-2">Items excluded from this scenario:</div>
+                  <div className="flex flex-wrap gap-1">
+                    {data.specItems.filter(si => !sc.itemsIncluded.includes(si.id)).map(si => (
+                      <span key={si.id} className="text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded">{si.item}</span>
+                    ))}
+                    {data.specItems.filter(si => !sc.itemsIncluded.includes(si.id)).length === 0 && (
+                      <span className="text-xs text-zinc-600 italic">All spec items included</span>
+                    )}
+                  </div>
+                </div>
+                <details className="mt-3">
+                  <summary className="text-xs text-zinc-500 cursor-pointer hover:text-zinc-400">Edit items in this scenario</summary>
+                  <div className="mt-2 max-h-48 overflow-y-auto space-y-1">
+                    {data.specItems.map(si => {
+                      const isIncluded = sc.itemsIncluded.includes(si.id);
+                      return (
+                        <label key={si.id} className="flex items-center gap-2 text-xs text-zinc-400 cursor-pointer hover:text-zinc-300">
+                          <input type="checkbox" checked={isIncluded} onChange={() => {
+                            const newScenarios = data.scenarios.map(s => {
+                              if (s.id !== sc.id) return s;
+                              const newItems = isIncluded ? s.itemsIncluded.filter(id => id !== si.id) : [...s.itemsIncluded, si.id];
+                              return { ...s, itemsIncluded: newItems };
+                            });
+                            save({ ...data, scenarios: newScenarios });
+                          }} className="rounded" />
+                          {si.item}
+                          <span className="text-zinc-600 ml-auto tabular-nums">{fmt(selectedTender && selectedTender.items[si.id] ? selectedTender.items[si.id].price : 0)}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </details>
+              </Card>
+            ))}
+          </div>
+        </div>
+      );
+
+      const tabs = [
+        { id: "dashboard", label: "Dashboard" },
+        { id: "comparison", label: "Tender Comparison", count: tenderFlags.length },
+        { id: "milestones", label: "Milestones", count: data.milestones.filter(m => m.status !== "paid").length },
+        { id: "owner", label: "Owner Supplied", count: data.ownerSupplied.length },
+        { id: "scenarios", label: "Scenarios", count: data.scenarios.length },
+      ];
+
+      return (
+        <div className="min-h-screen bg-zinc-950 text-zinc-300">
+          <div className="border-b border-zinc-800 bg-zinc-950/95 sticky top-0 z-10 backdrop-blur-sm">
+            <div className="max-w-6xl mx-auto px-4">
+              <div className="flex items-center justify-between py-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded bg-amber-500/20 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-amber-400">
+                      <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h1 className="text-base font-bold text-zinc-100 tracking-tight">{data.projectName}</h1>
+                    <div className="text-xs text-zinc-600">Renovation Tracker</div>
+                  </div>
+                </div>
+                <button onClick={() => {
+                  if (confirm("Reset all data to defaults? This cannot be undone.")) save(defaultData);
+                }} className="text-xs text-zinc-600 hover:text-zinc-400 px-2 py-1 rounded hover:bg-zinc-800 transition-all">
+                  Reset data
+                </button>
+              </div>
+              <div className="flex gap-0 overflow-x-auto -mb-px">
+                {tabs.map(t => <Tab key={t.id} label={t.label} active={activeTab === t.id} onClick={() => setActiveTab(t.id)} count={t.count} />)}
+              </div>
+            </div>
+          </div>
+
+          <div className="max-w-6xl mx-auto px-4 py-6">
+            {activeTab === "dashboard" && renderDashboard()}
+            {activeTab === "comparison" && renderComparison()}
+            {activeTab === "milestones" && renderMilestones()}
+            {activeTab === "owner" && renderOwnerSupplied()}
+            {activeTab === "scenarios" && renderScenarios()}
+          </div>
+
+          <div className="max-w-6xl mx-auto px-4 py-8 border-t border-zinc-900">
+            <p className="text-xs text-zinc-700 text-center">Data saved to your browser. Upload your spec & tenders to Claude to generate a tailored comparison.</p>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<RenovationTracker />);
+  </script>
+</body>
+</html>
