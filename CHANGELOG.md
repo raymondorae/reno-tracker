@@ -11,6 +11,15 @@
 
 ## Changelog
 
+### BUG-004 — done (JSON Parse Fails on Large AI Responses)
+
+- **Root cause:** `max_tokens` was set to 4096 — component breakdown arrays made responses much larger, causing truncation mid-JSON.
+- **Fix 1:** Increased `max_tokens` from 4096 to 16384 in the Anthropic API call (shared by both spec and tender parsing).
+- **Fix 2:** Added `repairTruncatedJSON()` helper — detects unclosed strings, cleans trailing partial tokens (commas, colons), and closes open brackets/braces in correct order using a stack. Integrated into `extractJSON` as a fallback after initial parse fails.
+- **Fix 3:** `aiCall` now checks API response `stop_reason` — if `"max_tokens"`, logs console warning ("AI response was truncated") and returns `{text, truncated}` flag. Spec parsing shows truncation warning in the UI status message. Tender parsing logs to console.
+- **Fix 4:** `extractJSON` now logs clearly whether parse succeeded on first try, after repair, or via regex fallback.
+- **No duplicate API calls found** — only one fetch per parse operation, no React StrictMode double-render. A 401 error appearing before a successful call is likely a stale key or browser extension, not a code issue.
+
 ### FEAT-020 — done (Component Breakdown)
 
 - **FEAT-020 (Part 1):** Component breakdown data model and AI parsing — specItems now support an optional `components` array where each component has `{description, qty, unitCost, subtotal}`. AI spec parsing prompt instructs the model to break each item into components whose subtotals approximate the eMid value. Tender parsing prompt now requests `tenderComponents` per item showing what the builder actually quoted. Merge confirmation modal shows "(X components)" label next to items that have breakdown detail. Backwards compatible — existing items without components work unchanged.
@@ -79,6 +88,7 @@
 | ID | Priority | Status | Description | Steps to Reproduce | Date Logged |
 |----|----------|--------|-------------|---------------------|-------------|
 | BUG-003 | high | done | JSON parse failed on spec/tender AI responses | Upload spec or tender PDF, parse via AI — response contains markdown code fences or preamble text that breaks JSON.parse | 2026-03-10 |
+| BUG-004 | high | done | JSON parse fails on large AI responses despite valid-looking start | max_tokens too low (4096) causes truncation with component arrays. extractJSON had no repair logic for truncated JSON. | 2026-03-10 |
 
 ## Open Feature Requests
 
@@ -125,6 +135,7 @@
 | FEAT-019 | Multi-project support | Create, switch, delete, rename projects. Per-project localStorage. Auto-migration. Empty state handling. | 2026-03-10 |
 | BUG-003 | JSON parse failed on spec/tender AI responses | Robust extractJSON helper: strips code fences, trims preamble/postamble, regex fallback for outermost JSON, console logging on failure. Strengthened system prompts to explicitly forbid markdown formatting. | 2026-03-10 |
 | FEAT-020 | Component breakdown for spec items and tenders | Part 1: data model + AI parsing + merge modal label. Part 2: expandable sub-rows in comparison matrix with chevron toggle, tender component parallel display, components total row. | 2026-03-10 |
+| BUG-004 | JSON parse fails on large AI responses | Increased max_tokens 4096→16384, added repairTruncatedJSON helper (unclosed string handling, bracket closing), stop_reason truncation detection, clear console logging. | 2026-03-10 |
 
 ---
 
