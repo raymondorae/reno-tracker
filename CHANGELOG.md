@@ -11,6 +11,11 @@
 
 ## Changelog
 
+### BUG-008 — done (Budget input not editable)
+
+- **Root cause:** v1.7.0 placed budget/contingency inputs in the small tier card header, but users naturally click the big prominent "TOTAL BUDGET £0" summary card which was a static `<div>`, not an input.
+- **Fix:** Moved budget and contingency editing into the Total Budget summary card itself. Budget shows as an inline `<input>` styled to match the card's big bold text (transparent bg, bottom border that highlights amber on focus). Contingency is an inline input in the subtitle. Removed the redundant small inputs from the tier card header.
+
 ### v1.7.0 — 2026-03-10 (Budget Editing, Production Builds, Contingency Editing)
 
 - **FEAT-024:** Editable budget and contingency — inline number inputs on the Dashboard (alongside area) let users set their total budget (£) and contingency percentage. Values persist to localStorage. Defaults preserved for existing users (£250k / 15%).
@@ -153,6 +158,7 @@
 | BUG-004 | high | done | JSON parse fails on large AI responses despite valid-looking start | max_tokens too low (4096) causes truncation with component arrays. extractJSON had no repair logic for truncated JSON. | 2026-03-10 |
 | BUG-005 | medium | done | Extract Items button misleadingly showed estimates | Merge modal showed £0 values for extract-only items; upload zone desc implied estimates; AI user message was identical for both modes | 2026-03-10 |
 | BUG-006 | medium | done | Collapsible categories not working | Category headers in comparison matrix don't expand/collapse — CATS.map() with nested arrays + nulls caused React reconciliation issues. Fixed with flatMap. | 2026-03-10 |
+| BUG-008 | medium | done | Budget input not editable | v1.7.0 placed inputs in tier card header — users expected to click the "TOTAL BUDGET £0" summary card. Moved editing into the summary card. | 2026-03-10 |
 
 ## Open Feature Requests
 
@@ -211,6 +217,7 @@
 | BUG-005 | Extract Items button misleadingly showed estimates | Merge modal shows "No estimates" for extract-only items. Upload zone desc neutralised. AI user message differentiated. Hint text under buttons. | 2026-03-10 |
 | BUG-006 | Collapsible categories not working | Changed CATS.map() to CATS.flatMap() with return [] instead of return null — gives React a flat array for proper reconciliation. | 2026-03-10 |
 | FEAT-024 | Budget & contingency editing | Inline editable budget (£) and contingency (%) inputs on Dashboard. Production React builds. DEBUG-gated console output. | 2026-03-10 |
+| BUG-008 | Budget input not editable | Moved budget/contingency editing from tier card header into the Total Budget summary card where users expect it. | 2026-03-10 |
 
 ---
 
