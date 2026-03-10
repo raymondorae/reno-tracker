@@ -410,6 +410,56 @@ Rules:
         }
       }, []);
 
+      // --- All useMemo hooks (must be before early return) ---
+
+      const selectedTender = useMemo(() => {
+        if (!data) return null;
+        if (!data.tenders) return null;
+        return data.tenders.find(t => t.id === data.selectedTender) || data.tenders[0] || null;
+      }, [data]);
+
+      const contractValue = useMemo(() => {
+        if (!selectedTender || !selectedTender.items) return 0;
+        return Object.values(selectedTender.items).reduce((s, i) => s + (i.included ? i.price : 0), 0);
+      }, [selectedTender]);
+
+      const ownerSuppliedTotal = useMemo(() => {
+        if (!data || !data.ownerSupplied) return { budget: 0, actual: 0 };
+        return {
+          budget: data.ownerSupplied.reduce((s, i) => s + i.budget, 0),
+          actual: data.ownerSupplied.reduce((s, i) => s + i.actual, 0),
+        };
+      }, [data]);
+
+      const activeCats = useMemo(() => {
+        if (!data || !data.specItems) return [];
+        const cats = [];
+        data.specItems.forEach(s => { if (!cats.includes(s.category)) cats.push(s.category); });
+        return cats;
+      }, [data]);
+
+      const tenderBuilderGroups = useMemo(() => {
+        if (!data) return {};
+        const groups = {};
+        (data.tenderDocuments || []).forEach(d => {
+          if (!groups[d.builderName]) groups[d.builderName] = [];
+          groups[d.builderName].push(d);
+        });
+        return groups;
+      }, [data]);
+
+      // --- Early return (ALL hooks are above this line) ---
+
+      if (loading || !data) {
+        return (
+          <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+            <div className="text-zinc-400 text-lg tracking-wide">Loading tracker...</div>
+          </div>
+        );
+      }
+
+      // --- Functions (only needed when data is loaded) ---
+
       const saveApiKey = (key) => {
         setApiKey(key);
         try { localStorage.setItem(API_KEY_STORAGE_KEY, key); } catch (e) {}
@@ -594,51 +644,6 @@ Rules:
           setTenderParsing(false);
         }
       };
-
-      // --- Derived State (all hooks before early return) ---
-
-      const selectedTender = useMemo(() => {
-        if (!data) return null;
-        return data.tenders.find(t => t.id === data.selectedTender) || data.tenders[0] || null;
-      }, [data]);
-
-      const contractValue = useMemo(() => {
-        if (!selectedTender) return 0;
-        return Object.values(selectedTender.items).reduce((s, i) => s + (i.included ? i.price : 0), 0);
-      }, [selectedTender]);
-
-      const ownerSuppliedTotal = useMemo(() => {
-        if (!data) return { budget: 0, actual: 0 };
-        return {
-          budget: data.ownerSupplied.reduce((s, i) => s + i.budget, 0),
-          actual: data.ownerSupplied.reduce((s, i) => s + i.actual, 0),
-        };
-      }, [data]);
-
-      const activeCats = useMemo(() => {
-        if (!data) return [];
-        const cats = [];
-        data.specItems.forEach(s => { if (!cats.includes(s.category)) cats.push(s.category); });
-        return cats;
-      }, [data]);
-
-      const tenderBuilderGroups = useMemo(() => {
-        if (!data) return {};
-        const groups = {};
-        (data.tenderDocuments || []).forEach(d => {
-          if (!groups[d.builderName]) groups[d.builderName] = [];
-          groups[d.builderName].push(d);
-        });
-        return groups;
-      }, [data]);
-
-      if (loading || !data) {
-        return (
-          <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-            <div className="text-zinc-400 text-lg tracking-wide">Loading tracker...</div>
-          </div>
-        );
-      }
 
       // --- Computed values (not hooks, safe after early return) ---
 
