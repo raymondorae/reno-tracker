@@ -33,9 +33,10 @@
 <body class="bg-zinc-950 text-zinc-300 min-h-screen">
   <div id="root"></div>
   <script type="text/babel">
-    const { useState, useEffect, useCallback, useMemo } = React;
+    const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
     const STORAGE_KEY = "reno-tracker-v2";
+    const API_KEY_STORAGE_KEY = "reno-tracker-api-key";
 
     const defaultData = {
       projectName: "My Renovation",
@@ -164,13 +165,127 @@
     };
 
     const fmt = (n) => {
-      if (n === undefined || n === null) return "—";
+      if (n === undefined || n === null) return "\u2014";
       return new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
     };
 
     const pct = (n) => Math.round(n) + "%";
 
     const CATS = ["Demolition","Structural","Electrical","Plumbing","Plastering","Kitchen","Bathrooms","Flooring","Decoration","External","Windows","Roofing"];
+
+    // --- File & AI Helpers ---
+
+    const fileToBase64 = (file) => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(",")[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    const getContentBlock = (file, base64) => {
+      const mt = file.type;
+      if (mt === "application/pdf") {
+        return { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64 } };
+      }
+      return { type: "image", source: { type: "base64", media_type: mt, data: base64 } };
+    };
+
+    const callAnthropic = async (apiKey, contentBlocks) => {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json",
+          "anthropic-dangerous-direct-browser-access": "true",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 8192,
+          messages: [{ role: "user", content: contentBlocks }],
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error?.message || `API error ${res.status}`);
+      }
+      const json = await res.json();
+      const text = json.content.find(c => c.type === "text")?.text || "";
+      return text;
+    };
+
+    const extractJSON = (text) => {
+      const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (fenceMatch) return JSON.parse(fenceMatch[1].trim());
+      const braceStart = text.indexOf("{");
+      const bracketStart = text.indexOf("[");
+      let start = -1;
+      if (braceStart === -1) start = bracketStart;
+      else if (bracketStart === -1) start = braceStart;
+      else start = Math.min(braceStart, bracketStart);
+      if (start === -1) throw new Error("No JSON found in response");
+      const sub = text.slice(start);
+      return JSON.parse(sub);
+    };
+
+    const SPEC_PARSE_PROMPT = `You are analysing a renovation/building specification document. Extract EVERY line item and categorise them.
+
+Return a JSON object with this EXACT structure:
+{
+  "specItems": [
+    { "id": 1, "category": "CategoryName", "item": "Short item description", "unit": "item|sqm|lm|nr", "qty": 1, "specNotes": "Key details from spec" }
+  ],
+  "ownerSupplied": [
+    { "id": "os1", "item": "Item name", "supplier": "TBC", "budget": 0, "actual": 0, "ordered": false, "delivered": false, "notes": "Details from spec" }
+  ]
+}
+
+Rules:
+- specItems are work the BUILDER does (construction, installation, trades work)
+- ownerSupplied are items the HOMEOWNER sources and supplies (kitchen units, appliances, sanitaryware, tiles, doors, handles, light fittings, radiators, worktops — anything the owner buys and the builder just installs)
+- Use these categories for specItems: Demolition, Structural, Electrical, Plumbing, Plastering, Kitchen, Bathrooms, Flooring, Decoration, External, Windows, Roofing, Drainage, Heating, Insulation, Carpentry, General
+- IDs for specItems should be sequential integers starting at 1
+- IDs for ownerSupplied should be "os1", "os2", etc.
+- For ownerSupplied budget, estimate a realistic GBP budget if not stated, or use 0
+- Set supplier to "TBC" unless the spec names one
+- qty should be a number. If not stated, use 1
+- unit should be one of: item, sqm, lm, nr, m, set
+- Be thorough — extract EVERY item mentioned, even minor ones
+- specNotes should capture key details, dimensions, material specs, etc.
+- Return ONLY valid JSON, no markdown formatting or extra text`;
+
+    const buildTenderParsePrompt = (specItems) => `You are analysing a builder's tender/quote document for a renovation project. Map each quoted item to the spec items below, extract pricing, and flag any deviations or omissions.
+
+SPEC ITEMS (the items this tender should be quoting against):
+${JSON.stringify(specItems.map(s => ({ id: s.id, category: s.category, item: s.item, specNotes: s.specNotes })), null, 2)}
+
+Return a JSON object with this EXACT structure:
+{
+  "name": "Builder Name from the document",
+  "totalPrice": 0,
+  "items": {
+    "1": { "price": 4500, "included": true, "notes": "" },
+    "2": { "price": 0, "included": false, "notes": "NOT INCLUDED — reason" }
+  }
+}
+
+Rules:
+- "name" should be the builder/company name from the tender document
+- "totalPrice" should be the total quoted price stated in the document (or sum of line items if no total stated)
+- The "items" object keys MUST match the spec item IDs above (integers as strings)
+- For each spec item, determine if the tender includes it and at what price
+- If a tender line item clearly maps to a spec item, include it with the price
+- "included" = true if the builder is quoting for this work, false if explicitly excluded or not mentioned
+- "notes" should capture:
+  - Any deviation from the spec (different materials, different quantities, different scope)
+  - If the builder adds caveats, conditions, or exclusions
+  - Leave empty "" if the item matches the spec exactly
+- Flag deviations like: "Quoted for 40sqm not 45", "uPVC not aluminium", "Excludes X"
+- If a spec item is not mentioned at all in the tender, set included: false with notes: "Not mentioned in tender"
+- Be precise with prices — extract exact GBP amounts from the document
+- Return ONLY valid JSON, no markdown formatting or extra text`;
+
+    // --- UI Components ---
 
     const StatusBadge = ({ status }) => {
       const colors = {
@@ -199,6 +314,13 @@
       <div className={"bg-zinc-900/80 border border-zinc-800 rounded-lg " + className}>{children}</div>
     );
 
+    const Spinner = ({ size = "w-5 h-5" }) => (
+      <svg className={"animate-spin " + size} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+    );
+
     const WarningIcon = () => (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-amber-400 inline-block mr-1 flex-shrink-0">
         <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 6a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 6zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
@@ -217,10 +339,116 @@
       </svg>
     );
 
+    const UploadIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+      </svg>
+    );
+
+    const DocIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+      </svg>
+    );
+
+    const KeyIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+      </svg>
+    );
+
+    // --- Upload Zone Component ---
+
+    const UploadZone = ({ label, hint, accept, onFile, file, parsing, parsed, error, onParse, onClear, multiple }) => {
+      const inputRef = useRef(null);
+      const [dragOver, setDragOver] = useState(false);
+
+      const handleDrop = (e) => {
+        e.preventDefault();
+        setDragOver(false);
+        const files = Array.from(e.dataTransfer.files);
+        if (files.length > 0) onFile(multiple ? files : files[0]);
+      };
+
+      const handleSelect = (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length > 0) onFile(multiple ? files : files[0]);
+        e.target.value = "";
+      };
+
+      return (
+        <div className="flex-1">
+          <div className="text-xs text-zinc-500 uppercase tracking-wider mb-2">{label}</div>
+          {!file && !parsed ? (
+            <div
+              onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={handleDrop}
+              onClick={() => inputRef.current?.click()}
+              className={"border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all " +
+                (dragOver ? "border-amber-500 bg-amber-950/20" : "border-zinc-700 hover:border-zinc-500 hover:bg-zinc-900/50")}
+            >
+              <div className="flex justify-center mb-2 text-zinc-500"><UploadIcon /></div>
+              <div className="text-sm text-zinc-400">Drop file here or click to browse</div>
+              <div className="text-xs text-zinc-600 mt-1">{hint}</div>
+              <input ref={inputRef} type="file" accept={accept} onChange={handleSelect} className="hidden" multiple={multiple} />
+            </div>
+          ) : parsed ? (
+            <div className="border border-emerald-800/50 bg-emerald-950/20 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-emerald-400 text-sm">
+                <CheckIcon />
+                <span className="font-medium">Parsed successfully</span>
+              </div>
+              <div className="text-xs text-zinc-500 mt-1">{typeof parsed === "string" ? parsed : "Data loaded into tracker"}</div>
+              <button onClick={onClear} className="text-xs text-zinc-500 hover:text-zinc-300 mt-2 underline">Upload a different file</button>
+            </div>
+          ) : (
+            <div className="border border-zinc-700 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-zinc-300 text-sm">
+                <DocIcon />
+                <span className="truncate flex-1">{Array.isArray(file) ? file.map(f => f.name).join(", ") : file.name}</span>
+                <button onClick={onClear} className="text-zinc-500 hover:text-zinc-300 text-xs">Remove</button>
+              </div>
+              {error && (
+                <div className="text-xs text-red-400 mt-2 bg-red-950/20 border border-red-900/30 rounded px-2 py-1">{error}</div>
+              )}
+              <button
+                onClick={onParse}
+                disabled={parsing}
+                className={"mt-3 w-full flex items-center justify-center gap-2 px-4 py-2 rounded text-sm font-medium transition-all " +
+                  (parsing ? "bg-zinc-700 text-zinc-400 cursor-wait" : "bg-amber-600 hover:bg-amber-500 text-zinc-950")}
+              >
+                {parsing ? <><Spinner size="w-4 h-4" /> Parsing with AI...</> : "Parse with AI"}
+              </button>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // --- Main App ---
+
     function RenovationTracker() {
       const [data, setData] = useState(null);
       const [activeTab, setActiveTab] = useState("dashboard");
       const [loading, setLoading] = useState(true);
+
+      // API key state
+      const [apiKey, setApiKey] = useState("");
+      const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+      const [apiKeyInput, setApiKeyInput] = useState("");
+
+      // Spec upload state
+      const [specFile, setSpecFile] = useState(null);
+      const [specParsing, setSpecParsing] = useState(false);
+      const [specParsed, setSpecParsed] = useState(null);
+      const [specError, setSpecError] = useState(null);
+
+      // Tender upload state
+      const [tenderFile, setTenderFile] = useState(null);
+      const [tenderParsing, setTenderParsing] = useState(false);
+      const [tenderParsed, setTenderParsed] = useState(null);
+      const [tenderError, setTenderError] = useState(null);
 
       useEffect(() => {
         try {
@@ -233,6 +461,10 @@
         } catch (e) {
           setData(defaultData);
         }
+        try {
+          const key = localStorage.getItem(API_KEY_STORAGE_KEY);
+          if (key) { setApiKey(key); setApiKeyInput(key); }
+        } catch (e) {}
         setLoading(false);
       }, []);
 
@@ -245,9 +477,154 @@
         }
       }, []);
 
+      const saveApiKey = (key) => {
+        setApiKey(key);
+        try { localStorage.setItem(API_KEY_STORAGE_KEY, key); } catch (e) {}
+        setShowApiKeyModal(false);
+      };
+
+      // --- AI Parse Handlers ---
+
+      const handleParseSpec = async () => {
+        if (!apiKey) { setShowApiKeyModal(true); return; }
+        if (!specFile) return;
+        setSpecParsing(true);
+        setSpecError(null);
+        try {
+          const b64 = await fileToBase64(specFile);
+          const contentBlock = getContentBlock(specFile, b64);
+          const rawText = await callAnthropic(apiKey, [contentBlock, { type: "text", text: SPEC_PARSE_PROMPT }]);
+          const parsed = extractJSON(rawText);
+
+          if (!parsed.specItems || !Array.isArray(parsed.specItems)) {
+            throw new Error("AI response missing specItems array");
+          }
+
+          // Ensure IDs are correct
+          const specItems = parsed.specItems.map((s, i) => ({
+            id: i + 1,
+            category: s.category || "General",
+            item: s.item || "Unnamed item",
+            unit: s.unit || "item",
+            qty: Number(s.qty) || 1,
+            specNotes: s.specNotes || "",
+          }));
+
+          const ownerSupplied = (parsed.ownerSupplied || []).map((o, i) => ({
+            id: "os" + (i + 1),
+            item: o.item || "Unnamed item",
+            supplier: o.supplier || "TBC",
+            budget: Number(o.budget) || 0,
+            actual: Number(o.actual) || 0,
+            ordered: false,
+            delivered: false,
+            notes: o.notes || "",
+          }));
+
+          // Update all scenarios to include all new items
+          const allSpecIds = specItems.map(s => s.id);
+          const allOwnerIds = ownerSupplied.map(o => o.id);
+          const newScenarios = [{
+            id: "s1",
+            name: "Full spec as planned",
+            itemsIncluded: allSpecIds,
+            ownerItemsIncluded: allOwnerIds,
+            active: true,
+          }];
+
+          // Clear existing tenders since spec items have changed
+          const newData = {
+            ...data,
+            specItems,
+            ownerSupplied,
+            scenarios: newScenarios,
+            tenders: [],
+            selectedTender: "",
+          };
+          save(newData);
+          setSpecParsed(specItems.length + " spec items + " + ownerSupplied.length + " owner-supplied items extracted");
+        } catch (e) {
+          console.error("Spec parse error:", e);
+          setSpecError(e.message || "Failed to parse document");
+        } finally {
+          setSpecParsing(false);
+        }
+      };
+
+      const handleParseTender = async () => {
+        if (!apiKey) { setShowApiKeyModal(true); return; }
+        if (!tenderFile) return;
+        if (!data.specItems || data.specItems.length === 0) {
+          setTenderError("Upload and parse your spec document first — tenders are mapped against spec items.");
+          return;
+        }
+        setTenderParsing(true);
+        setTenderError(null);
+        try {
+          const files = Array.isArray(tenderFile) ? tenderFile : [tenderFile];
+          let tendersAdded = 0;
+          let newTenders = [...data.tenders];
+
+          for (const file of files) {
+            const b64 = await fileToBase64(file);
+            const contentBlock = getContentBlock(file, b64);
+            const prompt = buildTenderParsePrompt(data.specItems);
+            const rawText = await callAnthropic(apiKey, [contentBlock, { type: "text", text: prompt }]);
+            const parsed = extractJSON(rawText);
+
+            if (!parsed.items || typeof parsed.items !== "object") {
+              throw new Error("AI response missing items object for " + file.name);
+            }
+
+            // Build tender items keyed by spec item ID
+            const tenderItems = {};
+            data.specItems.forEach(si => {
+              const raw = parsed.items[String(si.id)];
+              if (raw) {
+                tenderItems[si.id] = {
+                  price: Number(raw.price) || 0,
+                  included: raw.included !== false,
+                  notes: raw.notes || "",
+                };
+              } else {
+                tenderItems[si.id] = { price: 0, included: false, notes: "Not mentioned in tender" };
+              }
+            });
+
+            const tenderId = "t" + (Date.now() + tendersAdded);
+            const tenderName = parsed.name || file.name.replace(/\.[^.]+$/, "");
+            const total = Number(parsed.totalPrice) || Object.values(tenderItems).reduce((s, i) => s + (i.included ? i.price : 0), 0);
+
+            newTenders.push({
+              id: tenderId,
+              name: tenderName,
+              submitted: new Date().toISOString().split("T")[0],
+              totalPrice: total,
+              items: tenderItems,
+            });
+            tendersAdded++;
+          }
+
+          const newData = {
+            ...data,
+            tenders: newTenders,
+            selectedTender: data.selectedTender || newTenders[0]?.id || "",
+          };
+          save(newData);
+          setTenderParsed(tendersAdded + " tender" + (tendersAdded !== 1 ? "s" : "") + " parsed and added");
+        } catch (e) {
+          console.error("Tender parse error:", e);
+          setTenderError(e.message || "Failed to parse tender");
+        } finally {
+          setTenderParsing(false);
+        }
+      };
+
+      // --- Derived State ---
+
       const selectedTender = useMemo(() => {
         if (!data) return null;
-        return data.tenders.find(t => t.id === data.selectedTender) || data.tenders[0];
+        return data.tenders.find(t => t.id === data.selectedTender) || data.tenders[0] || null;
       }, [data]);
 
       const contractValue = useMemo(() => {
@@ -304,6 +681,15 @@
         return { ...sc, builderCost, ownerCost, total, withinBudget, savings };
       });
 
+      // Discover unique categories from current data
+      const activeCats = useMemo(() => {
+        const cats = [];
+        data.specItems.forEach(s => { if (!cats.includes(s.category)) cats.push(s.category); });
+        return cats;
+      }, [data]);
+
+      // --- Render Tabs ---
+
       const renderDashboard = () => (
         <div className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -324,7 +710,7 @@
           <Card className="p-4">
             <div className="flex justify-between items-center mb-2">
               <span className="text-xs text-zinc-500 uppercase tracking-wider">Budget Utilisation</span>
-              <span className="text-xs text-zinc-400">{pct(totalProjectCost / budgetAvailable * 100)} of available budget</span>
+              <span className="text-xs text-zinc-400">{pct(budgetAvailable ? totalProjectCost / budgetAvailable * 100 : 0)} of available budget</span>
             </div>
             <div className="h-5 bg-zinc-800 rounded-full overflow-hidden flex">
               <div className="bg-amber-500/80 h-full transition-all" style={{ width: Math.min(100, contractValue / data.totalBudget * 100) + "%" }} />
@@ -338,26 +724,34 @@
             </div>
           </Card>
 
-          <Card className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs text-zinc-500 uppercase tracking-wider">Selected Tender</span>
-              <select value={data.selectedTender} onChange={e => save({ ...data, selectedTender: e.target.value })}
-                className="bg-zinc-800 border border-zinc-700 text-zinc-300 text-sm rounded px-2 py-1">
-                {data.tenders.map(t => <option key={t.id} value={t.id}>{t.name} — {fmt(t.totalPrice)}</option>)}
-              </select>
-            </div>
-            <div className="text-lg font-bold text-zinc-100">{selectedTender ? selectedTender.name : ""}</div>
-            <div className="text-sm text-zinc-400 mt-1">Quoted: {fmt(selectedTender ? selectedTender.totalPrice : 0)} · Line items total: {fmt(contractValue)}</div>
-          </Card>
+          {selectedTender && (
+            <Card className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs text-zinc-500 uppercase tracking-wider">Selected Tender</span>
+                <select value={data.selectedTender} onChange={e => save({ ...data, selectedTender: e.target.value })}
+                  className="bg-zinc-800 border border-zinc-700 text-zinc-300 text-sm rounded px-2 py-1">
+                  {data.tenders.map(t => <option key={t.id} value={t.id}>{t.name} \u2014 {fmt(t.totalPrice)}</option>)}
+                </select>
+              </div>
+              <div className="text-lg font-bold text-zinc-100">{selectedTender.name}</div>
+              <div className="text-sm text-zinc-400 mt-1">Quoted: {fmt(selectedTender.totalPrice)} \u00b7 Line items total: {fmt(contractValue)}</div>
+            </Card>
+          )}
 
-          {tenderFlags.filter(f => f.tenderId === data.selectedTender).length > 0 && (
+          {!selectedTender && data.tenders.length === 0 && (
+            <Card className="p-4">
+              <div className="text-sm text-zinc-400">No tenders loaded yet. Go to the <button onClick={() => setActiveTab("comparison")} className="text-amber-400 underline">Tender Comparison</button> tab to upload your spec and builder tenders.</div>
+            </Card>
+          )}
+
+          {tenderFlags.filter(f => f.tenderId === (data.selectedTender || "")).length > 0 && (
             <Card className="p-4">
               <div className="text-xs text-zinc-500 uppercase tracking-wider mb-3">Issues on Selected Tender</div>
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {tenderFlags.filter(f => f.tenderId === data.selectedTender).map((f, i) => (
                   <div key={i} className={"flex items-start gap-2 text-sm " + (f.type === "missing" ? "text-red-400" : "text-amber-400")}>
                     {f.type === "missing" ? <XIcon /> : <WarningIcon />}
-                    <div><span className="font-medium">{f.item}</span><span className="text-zinc-500 ml-2">— {f.detail}</span></div>
+                    <div><span className="font-medium">{f.item}</span><span className="text-zinc-500 ml-2">\u2014 {f.detail}</span></div>
                   </div>
                 ))}
               </div>
@@ -388,88 +782,154 @@
 
       const renderComparison = () => (
         <div className="space-y-4">
-          <Card className="p-4">
-            <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Spec-to-Tender Comparison Matrix</div>
-            <div className="text-sm text-zinc-400 mb-4">Every row is a line from your spec. Flags show where a tender deviates or omits.</div>
+          {/* Upload Documents Section */}
+          <Card className="p-5">
+            <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Upload Documents</div>
+            <div className="text-sm text-zinc-400 mb-4">Upload your spec document and builder tenders. AI will parse them into structured data automatically.</div>
+
+            {!apiKey && (
+              <div className="bg-amber-950/20 border border-amber-900/30 rounded-lg p-3 mb-4 flex items-center gap-2">
+                <WarningIcon />
+                <span className="text-sm text-amber-300">Set your Anthropic API key first.</span>
+                <button onClick={() => { setApiKeyInput(apiKey); setShowApiKeyModal(true); }}
+                  className="ml-auto text-xs bg-amber-600 hover:bg-amber-500 text-zinc-950 font-medium px-3 py-1 rounded">
+                  Set API Key
+                </button>
+              </div>
+            )}
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <UploadZone
+                label="Spec Document"
+                hint="PDF or image of your renovation spec"
+                accept=".pdf,image/*"
+                file={specFile}
+                parsing={specParsing}
+                parsed={specParsed}
+                error={specError}
+                onFile={f => { setSpecFile(f); setSpecParsed(null); setSpecError(null); }}
+                onParse={handleParseSpec}
+                onClear={() => { setSpecFile(null); setSpecParsed(null); setSpecError(null); }}
+              />
+              <UploadZone
+                label="Builder Tenders"
+                hint="PDF or image of builder quotes (one or more)"
+                accept=".pdf,image/*"
+                file={tenderFile}
+                parsing={tenderParsing}
+                parsed={tenderParsed}
+                error={tenderError}
+                onFile={f => { setTenderFile(f); setTenderParsed(null); setTenderError(null); }}
+                onParse={handleParseTender}
+                onClear={() => { setTenderFile(null); setTenderParsed(null); setTenderError(null); }}
+                multiple={true}
+              />
+            </div>
           </Card>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-zinc-800">
-                  <th className="text-left py-2 px-3 text-xs text-zinc-500 uppercase tracking-wider w-16">Cat</th>
-                  <th className="text-left py-2 px-3 text-xs text-zinc-500 uppercase tracking-wider">Spec Item</th>
-                  <th className="text-left py-2 px-3 text-xs text-zinc-500 uppercase tracking-wider w-28">Spec Notes</th>
-                  {data.tenders.map(t => (
-                    <th key={t.id} className={"text-right py-2 px-3 text-xs uppercase tracking-wider w-36 " + (t.id === data.selectedTender ? "text-amber-400" : "text-zinc-500")}>
-                      {t.name.split("—")[0].trim()}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {CATS.map(cat => {
-                  const items = data.specItems.filter(s => s.category === cat);
-                  if (items.length === 0) return null;
-                  return items.map((si, idx) => (
-                    <tr key={si.id} className={"border-b border-zinc-900/50 hover:bg-zinc-900/40 " + (idx === 0 ? "border-t border-zinc-800" : "")}>
-                      {idx === 0 && (
-                        <td rowSpan={items.length} className="py-2 px-3 text-xs text-zinc-600 uppercase tracking-wider align-top font-medium">{cat}</td>
-                      )}
-                      <td className="py-2 px-3 text-zinc-300">{si.item}</td>
-                      <td className="py-2 px-3 text-zinc-600 text-xs">{si.specNotes}</td>
-                      {data.tenders.map(t => {
-                        const ti = t.items[si.id];
-                        const isMissing = !ti || !ti.included;
-                        const hasNote = ti && ti.notes && ti.notes.length > 0;
-                        return (
-                          <td key={t.id} className={"py-2 px-3 text-right " + (t.id === data.selectedTender ? "bg-amber-950/10" : "")}>
-                            {isMissing ? (
-                              <div className="flex items-center justify-end gap-1 text-red-400 text-xs"><XIcon /><span>MISSING</span></div>
-                            ) : (
-                              <div>
-                                <div className={"tabular-nums " + (hasNote ? "text-amber-300" : "text-zinc-300")}>{fmt(ti.price)}</div>
-                                {hasNote && (
-                                  <div className="text-xs text-amber-500/70 mt-0.5 flex items-center justify-end gap-0.5">
-                                    <WarningIcon /><span className="max-w-28 truncate">{ti.notes}</span>
+
+          {/* Comparison Matrix */}
+          {data.specItems.length > 0 && data.tenders.length > 0 && (
+            <>
+              <Card className="p-4">
+                <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Spec-to-Tender Comparison Matrix</div>
+                <div className="text-sm text-zinc-400 mb-4">Every row is a line from your spec. Flags show where a tender deviates or omits.</div>
+              </Card>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-zinc-800">
+                      <th className="text-left py-2 px-3 text-xs text-zinc-500 uppercase tracking-wider w-16">Cat</th>
+                      <th className="text-left py-2 px-3 text-xs text-zinc-500 uppercase tracking-wider">Spec Item</th>
+                      <th className="text-left py-2 px-3 text-xs text-zinc-500 uppercase tracking-wider w-28">Spec Notes</th>
+                      {data.tenders.map(t => (
+                        <th key={t.id} className={"text-right py-2 px-3 text-xs uppercase tracking-wider w-36 " + (t.id === data.selectedTender ? "text-amber-400" : "text-zinc-500")}>
+                          {t.name.split("\u2014")[0].split("—")[0].trim()}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activeCats.map(cat => {
+                      const items = data.specItems.filter(s => s.category === cat);
+                      if (items.length === 0) return null;
+                      return items.map((si, idx) => (
+                        <tr key={si.id} className={"border-b border-zinc-900/50 hover:bg-zinc-900/40 " + (idx === 0 ? "border-t border-zinc-800" : "")}>
+                          {idx === 0 && (
+                            <td rowSpan={items.length} className="py-2 px-3 text-xs text-zinc-600 uppercase tracking-wider align-top font-medium">{cat}</td>
+                          )}
+                          <td className="py-2 px-3 text-zinc-300">{si.item}</td>
+                          <td className="py-2 px-3 text-zinc-600 text-xs">{si.specNotes}</td>
+                          {data.tenders.map(t => {
+                            const ti = t.items[si.id];
+                            const isMissing = !ti || !ti.included;
+                            const hasNote = ti && ti.notes && ti.notes.length > 0;
+                            return (
+                              <td key={t.id} className={"py-2 px-3 text-right " + (t.id === data.selectedTender ? "bg-amber-950/10" : "")}>
+                                {isMissing ? (
+                                  <div className="flex items-center justify-end gap-1 text-red-400 text-xs"><XIcon /><span>MISSING</span></div>
+                                ) : (
+                                  <div>
+                                    <div className={"tabular-nums " + (hasNote ? "text-amber-300" : "text-zinc-300")}>{fmt(ti.price)}</div>
+                                    {hasNote && (
+                                      <div className="text-xs text-amber-500/70 mt-0.5 flex items-center justify-end gap-0.5">
+                                        <WarningIcon /><span className="max-w-28 truncate">{ti.notes}</span>
+                                      </div>
+                                    )}
                                   </div>
                                 )}
-                              </div>
-                            )}
-                          </td>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ));
+                    })}
+                    <tr className="border-t-2 border-zinc-700 font-bold">
+                      <td colSpan={2} className="py-3 px-3 text-zinc-300 uppercase text-xs tracking-wider">Totals (included items only)</td>
+                      <td></td>
+                      {data.tenders.map(t => {
+                        const total = Object.values(t.items).reduce((s, i) => s + (i.included ? i.price : 0), 0);
+                        return (
+                          <td key={t.id} className={"py-3 px-3 text-right tabular-nums " + (t.id === data.selectedTender ? "text-amber-300" : "text-zinc-300")}>{fmt(total)}</td>
                         );
                       })}
                     </tr>
-                  ));
-                })}
-                <tr className="border-t-2 border-zinc-700 font-bold">
-                  <td colSpan={2} className="py-3 px-3 text-zinc-300 uppercase text-xs tracking-wider">Totals (included items only)</td>
-                  <td></td>
-                  {data.tenders.map(t => {
-                    const total = Object.values(t.items).reduce((s, i) => s + (i.included ? i.price : 0), 0);
-                    return (
-                      <td key={t.id} className={"py-3 px-3 text-right tabular-nums " + (t.id === data.selectedTender ? "text-amber-300" : "text-zinc-300")}>{fmt(total)}</td>
-                    );
-                  })}
-                </tr>
-              </tbody>
-            </table>
-          </div>
+                  </tbody>
+                </table>
+              </div>
 
-          <Card className="p-4">
-            <div className="text-xs text-zinc-500 uppercase tracking-wider mb-3">All Flags & Deviations</div>
-            <div className="grid gap-2 max-h-72 overflow-y-auto">
-              {tenderFlags.map((f, i) => (
-                <div key={i} className={"flex items-start gap-2 text-sm rounded px-3 py-2 " + (f.type === "missing" ? "bg-red-950/20 border border-red-900/30" : "bg-amber-950/20 border border-amber-900/30")}>
-                  <div className="mt-0.5">{f.type === "missing" ? <XIcon /> : <WarningIcon />}</div>
-                  <div className="flex-1">
-                    <span className="text-zinc-400 text-xs">{f.tender}</span>
-                    <div className={f.type === "missing" ? "text-red-300" : "text-amber-300"}>{f.item}</div>
-                    <div className="text-zinc-500 text-xs">{f.detail}</div>
+              <Card className="p-4">
+                <div className="text-xs text-zinc-500 uppercase tracking-wider mb-3">All Flags & Deviations</div>
+                {tenderFlags.length > 0 ? (
+                  <div className="grid gap-2 max-h-72 overflow-y-auto">
+                    {tenderFlags.map((f, i) => (
+                      <div key={i} className={"flex items-start gap-2 text-sm rounded px-3 py-2 " + (f.type === "missing" ? "bg-red-950/20 border border-red-900/30" : "bg-amber-950/20 border border-amber-900/30")}>
+                        <div className="mt-0.5">{f.type === "missing" ? <XIcon /> : <WarningIcon />}</div>
+                        <div className="flex-1">
+                          <span className="text-zinc-400 text-xs">{f.tender}</span>
+                          <div className={f.type === "missing" ? "text-red-300" : "text-amber-300"}>{f.item}</div>
+                          <div className="text-zinc-500 text-xs">{f.detail}</div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </div>
-              ))}
-            </div>
-          </Card>
+                ) : (
+                  <div className="text-sm text-zinc-500 italic">No deviations or omissions found.</div>
+                )}
+              </Card>
+            </>
+          )}
+
+          {data.specItems.length > 0 && data.tenders.length === 0 && (
+            <Card className="p-6 text-center">
+              <div className="text-zinc-400 text-sm">Spec loaded with {data.specItems.length} items. Upload builder tenders above to generate the comparison matrix.</div>
+            </Card>
+          )}
+
+          {data.specItems.length === 0 && (
+            <Card className="p-6 text-center">
+              <div className="text-zinc-400 text-sm">Upload your spec document above to get started. AI will extract all line items automatically.</div>
+            </Card>
+          )}
         </div>
       );
 
@@ -478,7 +938,7 @@
           <Card className="p-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-1 gap-2">
               <span className="text-xs text-zinc-500 uppercase tracking-wider">Milestone Payment Tracker</span>
-              <span className="text-sm text-zinc-400">Contract: {fmt(contractValue)} · Paid: {fmt(totalPaid)} · Remaining: {fmt(contractValue - totalPaid)}</span>
+              <span className="text-sm text-zinc-400">Contract: {fmt(contractValue)} \u00b7 Paid: {fmt(totalPaid)} \u00b7 Remaining: {fmt(contractValue - totalPaid)}</span>
             </div>
             <div className="h-3 bg-zinc-800 rounded-full overflow-hidden mt-3">
               <div className="bg-emerald-500 h-full rounded-full transition-all" style={{ width: (contractValue ? totalPaid / contractValue * 100 : 0) + "%" }} />
@@ -498,7 +958,7 @@
                         <span className="text-zinc-200 font-medium">{m.name}</span>
                         <StatusBadge status={m.status} />
                       </div>
-                      <div className="text-xs text-zinc-500 mt-1">Due: {m.dueDate} · {m.pctOfContract}% of contract</div>
+                      <div className="text-xs text-zinc-500 mt-1">Due: {m.dueDate} \u00b7 {m.pctOfContract}% of contract</div>
                     </div>
                     <div className="text-right">
                       <div className="text-lg font-bold tabular-nums text-zinc-200">{fmt(due)}</div>
@@ -531,7 +991,7 @@
           <Card className="p-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <span className="text-xs text-zinc-500 uppercase tracking-wider">Owner-Supplied Fixtures & Fittings</span>
-              <div className="text-sm text-zinc-400">Budget: {fmt(ownerSuppliedTotal.budget)} · Spent: {fmt(ownerSuppliedTotal.actual)}</div>
+              <div className="text-sm text-zinc-400">Budget: {fmt(ownerSuppliedTotal.budget)} \u00b7 Spent: {fmt(ownerSuppliedTotal.actual)}</div>
             </div>
           </Card>
           <div className="space-y-3">
@@ -540,7 +1000,7 @@
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="text-zinc-200 font-medium">{os.item}</div>
-                    <div className="text-xs text-zinc-500 mt-0.5">{os.supplier} · {os.notes}</div>
+                    <div className="text-xs text-zinc-500 mt-0.5">{os.supplier} \u00b7 {os.notes}</div>
                     <div className="flex gap-3 mt-2">
                       <button onClick={() => {
                         const updated = data.ownerSupplied.map(o => o.id === os.id ? { ...o, ordered: !o.ordered } : o);
@@ -582,7 +1042,7 @@
         <div className="space-y-4">
           <Card className="p-4">
             <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Scenario Modelling</div>
-            <div className="text-sm text-zinc-400">Toggle spec items on/off per scenario to see budget impact. Based on <strong className="text-zinc-300">{selectedTender ? selectedTender.name : ""}</strong> pricing.</div>
+            <div className="text-sm text-zinc-400">Toggle spec items on/off per scenario to see budget impact.{selectedTender ? <> Based on <strong className="text-zinc-300">{selectedTender.name}</strong> pricing.</> : " No tender selected."}</div>
           </Card>
           <div className="grid gap-4 md:grid-cols-2">
             {scenarioCosts.map(sc => (
@@ -590,7 +1050,7 @@
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <div className="text-zinc-200 font-medium">{sc.name}</div>
-                    <div className="text-xs text-zinc-500 mt-0.5">{sc.itemsIncluded.length} of {data.specItems.length} spec items · {sc.ownerItemsIncluded.length} owner items</div>
+                    <div className="text-xs text-zinc-500 mt-0.5">{sc.itemsIncluded.length} of {data.specItems.length} spec items \u00b7 {sc.ownerItemsIncluded.length} owner items</div>
                   </div>
                   <div className={"text-xs px-2 py-1 rounded font-medium " + (sc.withinBudget ? "bg-emerald-900/30 text-emerald-400" : "bg-red-900/30 text-red-400")}>
                     {sc.withinBudget ? "WITHIN BUDGET" : "OVER BUDGET"}
@@ -603,10 +1063,10 @@
                 </div>
                 <div className="h-2 bg-zinc-800 rounded-full overflow-hidden mb-2">
                   <div className={"h-full rounded-full transition-all " + (sc.withinBudget ? "bg-emerald-500" : "bg-red-500")}
-                    style={{ width: Math.min(100, sc.total / budgetAvailable * 100) + "%" }} />
+                    style={{ width: Math.min(100, budgetAvailable ? sc.total / budgetAvailable * 100 : 0) + "%" }} />
                 </div>
                 <div className="flex justify-between text-xs text-zinc-500">
-                  <span>{pct(sc.total / budgetAvailable * 100)} of available budget</span>
+                  <span>{pct(budgetAvailable ? sc.total / budgetAvailable * 100 : 0)} of available budget</span>
                   <span>{sc.savings > 0 ? "Saves " + fmt(sc.savings) + " vs full spec" : sc.savings === 0 ? "Full spec" : fmt(Math.abs(sc.savings)) + " more than full spec"}</span>
                 </div>
                 <div className="mt-3 pt-3 border-t border-zinc-800">
@@ -672,11 +1132,19 @@
                     <div className="text-xs text-zinc-600">Renovation Tracker</div>
                   </div>
                 </div>
-                <button onClick={() => {
-                  if (confirm("Reset all data to defaults? This cannot be undone.")) save(defaultData);
-                }} className="text-xs text-zinc-600 hover:text-zinc-400 px-2 py-1 rounded hover:bg-zinc-800 transition-all">
-                  Reset data
-                </button>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => { setApiKeyInput(apiKey); setShowApiKeyModal(true); }}
+                    className={"flex items-center gap-1.5 text-xs px-2 py-1 rounded transition-all " +
+                      (apiKey ? "text-emerald-400 hover:bg-zinc-800" : "text-amber-400 bg-amber-950/30 hover:bg-amber-950/50 border border-amber-900/30")}>
+                    <KeyIcon />
+                    {apiKey ? "API Key Set" : "Set API Key"}
+                  </button>
+                  <button onClick={() => {
+                    if (confirm("Reset all data to defaults? This cannot be undone.")) save(defaultData);
+                  }} className="text-xs text-zinc-600 hover:text-zinc-400 px-2 py-1 rounded hover:bg-zinc-800 transition-all">
+                    Reset data
+                  </button>
+                </div>
               </div>
               <div className="flex gap-0 overflow-x-auto -mb-px">
                 {tabs.map(t => <Tab key={t.id} label={t.label} active={activeTab === t.id} onClick={() => setActiveTab(t.id)} count={t.count} />)}
@@ -693,8 +1161,40 @@
           </div>
 
           <div className="max-w-6xl mx-auto px-4 py-8 border-t border-zinc-900">
-            <p className="text-xs text-zinc-700 text-center">Data saved to your browser. Upload your spec & tenders to Claude to generate a tailored comparison.</p>
+            <p className="text-xs text-zinc-700 text-center">Data saved to your browser. Upload your spec & tenders on the Tender Comparison tab to auto-populate with AI.</p>
           </div>
+
+          {/* API Key Modal */}
+          {showApiKeyModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowApiKeyModal(false)}>
+              <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+                <div className="text-lg font-bold text-zinc-100 mb-1">Anthropic API Key</div>
+                <div className="text-sm text-zinc-400 mb-4">Your key is stored locally in your browser and never sent anywhere except directly to the Anthropic API.</div>
+                <input
+                  type="password"
+                  value={apiKeyInput}
+                  onChange={e => setApiKeyInput(e.target.value)}
+                  placeholder="sk-ant-..."
+                  className="w-full bg-zinc-800 border border-zinc-600 rounded px-3 py-2 text-sm text-zinc-200 font-mono placeholder-zinc-600 focus:outline-none focus:border-amber-500"
+                  autoFocus
+                />
+                <div className="flex gap-2 mt-4 justify-end">
+                  <button onClick={() => setShowApiKeyModal(false)}
+                    className="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-200 rounded hover:bg-zinc-800 transition-all">Cancel</button>
+                  {apiKey && (
+                    <button onClick={() => { saveApiKey(""); setApiKeyInput(""); }}
+                      className="px-4 py-2 text-sm text-red-400 hover:text-red-300 rounded hover:bg-red-950/30 transition-all">Remove Key</button>
+                  )}
+                  <button onClick={() => saveApiKey(apiKeyInput.trim())}
+                    disabled={!apiKeyInput.trim()}
+                    className={"px-4 py-2 text-sm font-medium rounded transition-all " +
+                      (apiKeyInput.trim() ? "bg-amber-600 hover:bg-amber-500 text-zinc-950" : "bg-zinc-700 text-zinc-500 cursor-not-allowed")}>
+                    Save Key
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       );
     }
