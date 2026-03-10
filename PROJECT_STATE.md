@@ -37,11 +37,9 @@ Single-file architecture — all React components, default data, and styling liv
 | Module | Status | Description |
 |--------|--------|-------------|
 | Dashboard | Live | Budget overview, utilisation bar, tender selector, issue summary, milestone overview |
-| Tender Comparison | Live (v1) | Spec-to-tender matrix, per-item pricing, deviation/omission flags, totals row |
-| Tender Comparison | Planned (v2) | Upload zones for spec doc + builder tenders, AI-powered parsing into structured data |
+| Tender Comparison | Live (v2) | Upload zones for spec doc + builder tenders, spec-to-tender matrix, deviation/omission flags, totals row |
 | Milestones | Live | Payment schedule by contract %, status toggles (pending/partial/paid/overdue) |
-| Owner Supplied | Live (v1) | Fixtures & fittings budget vs actual, ordered/delivered toggles |
-| Owner Supplied | Planned (v2) | AI auto-populate from spec, multiple options per item with selection, add new items via UI |
+| Owner Supplied | Live (v2) | Multi-option fixtures & fittings with active selection, add new items via UI, budget vs actual, ordered/delivered toggles |
 | Scenarios | Live | What-if modelling, toggle items per scenario, budget impact calculation |
 
 ---
@@ -93,19 +91,21 @@ This runs entirely client-side. No backend needed. User provides their own Anthr
 
 ## Current State
 
-- **Version:** 1.0.0
+- **Version:** 1.1.0
 - **Last updated:** 2026-03-10
 - **Sample data:** 18 spec items, 3 tenders, 9 milestones, 9 owner-supplied items, 4 scenarios
+- **Upload zones:** Spec doc + builder tender upload areas on Tender Comparison tab
+- **Owner supplied:** Multi-option support with active selection, add new items UI
 
 ---
 
 ## Next Steps (Priority Order)
 
-1. FEAT-011: Add document upload zones to Tender Comparison tab (spec doc area + builder tender area)
-2. FEAT-012: AI parsing of uploaded spec doc → auto-populate specItems and ownerSupplied
-3. FEAT-013: AI parsing of uploaded tenders → auto-populate tender comparison matrix with flags
-4. FEAT-014: Owner Supplied v2 — multiple options per item with active selection toggle
-5. FEAT-015: Owner Supplied — auto-populate from spec doc via AI
-6. FEAT-010: Add new owner-supplied items manually via UI
+1. ~~FEAT-011: Upload zones~~ — Done (v1.1.0)
+2. ~~FEAT-014: Owner Supplied v2 — multi-option~~ — Done (v1.1.0)
+3. ~~FEAT-010: Add new owner-supplied items~~ — Done (v1.1.0)
+4. FEAT-012: AI parsing of uploaded spec doc → auto-populate specItems and ownerSupplied
+5. FEAT-013: AI parsing of uploaded tenders → auto-populate tender comparison matrix with flags
+6. FEAT-015: Owner Supplied — auto-populate from spec doc via AI
 7. FEAT-004/005: Add/edit/delete spec items and tenders in UI
 8. FEAT-009: Mobile responsive polish
