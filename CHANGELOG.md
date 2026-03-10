@@ -11,9 +11,10 @@
 
 ## Changelog
 
-### FEAT-020 Part 1 — in-progress (Component Breakdown)
+### FEAT-020 — done (Component Breakdown)
 
 - **FEAT-020 (Part 1):** Component breakdown data model and AI parsing — specItems now support an optional `components` array where each component has `{description, qty, unitCost, subtotal}`. AI spec parsing prompt instructs the model to break each item into components whose subtotals approximate the eMid value. Tender parsing prompt now requests `tenderComponents` per item showing what the builder actually quoted. Merge confirmation modal shows "(X components)" label next to items that have breakdown detail. Backwards compatible — existing items without components work unchanged.
+- **FEAT-020 (Part 2):** Expandable component breakdown in tender comparison matrix — chevron toggle (▶/▼) on spec items that have components, click to expand/collapse sub-rows showing individual component detail (description, qty, unit cost, subtotal). Tender columns show `tenderComponents` in parallel for side-by-side comparison. Components total row at bottom of each expanded section. Multiple items can be expanded simultaneously. Styled with muted background, indentation, amber left border accent, and smooth chevron rotation transition.
 
 ### v1.5.0 — 2026-03-10 (Multi-Project Support)
 
@@ -102,7 +103,7 @@
 | FEAT-017 | high | done | Location-based cost estimates | Spec items get eLow/eMid/eHigh tuned to user's area, dashboard shows tier breakdown | 2026-03-10 |
 | FEAT-018 | medium | done | Flexible quote selection with tiers | Owner-supplied options tagged Budget/Mid/Premium, AI Estimate tender auto-generated | 2026-03-10 |
 | FEAT-019 | high | done | Multi-project support | Create, switch, delete, rename projects. Per-project data isolation. Auto-migration from old format. | 2026-03-10 |
-| FEAT-020 | high | in-progress | Component breakdown for spec items and tenders | Part 1: data model + AI parsing + merge modal label (done). Part 2: UI display in comparison matrix (pending). | 2026-03-10 |
+| FEAT-020 | high | done | Component breakdown for spec items and tenders | Part 1: data model + AI parsing + merge modal label. Part 2: expandable sub-rows in comparison matrix with tender component comparison. | 2026-03-10 |
 
 ## Closed / Done
 
@@ -123,6 +124,7 @@
 | FEAT-005 | Add/edit/delete tenders in UI | Add/delete tenders, rename builder inline, edit per-item pricing/included/notes inline in matrix | 2026-03-10 |
 | FEAT-019 | Multi-project support | Create, switch, delete, rename projects. Per-project localStorage. Auto-migration. Empty state handling. | 2026-03-10 |
 | BUG-003 | JSON parse failed on spec/tender AI responses | Robust extractJSON helper: strips code fences, trims preamble/postamble, regex fallback for outermost JSON, console logging on failure. Strengthened system prompts to explicitly forbid markdown formatting. | 2026-03-10 |
+| FEAT-020 | Component breakdown for spec items and tenders | Part 1: data model + AI parsing + merge modal label. Part 2: expandable sub-rows in comparison matrix with chevron toggle, tender component parallel display, components total row. | 2026-03-10 |
 
 ---
 
