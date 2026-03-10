@@ -73,7 +73,7 @@
 
 | ID | Priority | Status | Description | Steps to Reproduce | Date Logged |
 |----|----------|--------|-------------|---------------------|-------------|
-| — | — | — | — | — | — |
+| BUG-003 | high | done | JSON parse failed on spec/tender AI responses | Upload spec or tender PDF, parse via AI — response contains markdown code fences or preamble text that breaks JSON.parse | 2026-03-10 |
 
 ## Open Feature Requests
 
@@ -117,6 +117,7 @@
 | FEAT-004 | Add/edit/delete spec items in UI | Part 1: add via modal. Part 2: edit + delete with confirmation on each comparison matrix row | 2026-03-10 |
 | FEAT-005 | Add/edit/delete tenders in UI | Add/delete tenders, rename builder inline, edit per-item pricing/included/notes inline in matrix | 2026-03-10 |
 | FEAT-019 | Multi-project support | Create, switch, delete, rename projects. Per-project localStorage. Auto-migration. Empty state handling. | 2026-03-10 |
+| BUG-003 | JSON parse failed on spec/tender AI responses | Robust extractJSON helper: strips code fences, trims preamble/postamble, regex fallback for outermost JSON, console logging on failure. Strengthened system prompts to explicitly forbid markdown formatting. | 2026-03-10 |
 
 ---
 
