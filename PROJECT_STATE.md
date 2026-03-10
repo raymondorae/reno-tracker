@@ -37,7 +37,7 @@ Single-file architecture — all React components, default data, and styling liv
 | Module | Status | Description |
 |--------|--------|-------------|
 | Dashboard | Live | Budget overview, utilisation bar, tender selector, issue summary, milestone overview |
-| Tender Comparison | Live (v3) | Upload zones, AI spec parsing with merge confirmation, AI tender parsing, comparison matrix with estimate ranges, status indicators |
+| Tender Comparison | Live (v4) | Upload zones, AI spec parsing with merge confirmation, AI tender parsing, comparison matrix with estimate ranges, status indicators, inline cell editing, add/delete tenders, rename builders |
 | Milestones | Live | Payment schedule by contract %, status toggles (pending/partial/paid/overdue) |
 | Owner Supplied | Live (v3) | Multi-option with tier tags (Budget/Mid/Premium), add real quotes, add new items, ordered/delivered toggles |
 | AI Integration | Live | Spec parsing with location-based estimates, tender parsing, partial merge with confirmation modal, AI Estimate tender auto-generation |
@@ -91,11 +91,13 @@ This runs entirely client-side. No backend needed. User provides their own Anthr
 
 ## Current State
 
-- **Version:** 1.3.0
+- **Version:** 1.4.0
 - **Last updated:** 2026-03-10
 - **Sample data:** 18 spec items (with eLow/eMid/eHigh estimates), 3 sample tenders, 9 milestones, 9 owner-supplied items (with Budget/Mid/Premium tiers), 4 scenarios
 - **AI features:** Spec parsing with merge confirmation, tender parsing, location-based estimates, AI Estimate tender auto-generation
 - **Owner supplied:** Multi-option with tier tags, add real quotes, add new items UI
+- **Spec items:** Full CRUD — add, edit, delete via UI with cascade to tenders and scenarios
+- **Tenders:** Full CRUD — add, delete, rename builder, edit per-item pricing/included/notes inline in comparison matrix
 
 ---
 
@@ -107,5 +109,7 @@ This runs entirely client-side. No backend needed. User provides their own Anthr
 4. FEAT-012: AI parsing of uploaded spec doc → auto-populate specItems and ownerSupplied
 5. FEAT-013: AI parsing of uploaded tenders → auto-populate tender comparison matrix with flags
 6. FEAT-015: Owner Supplied — auto-populate from spec doc via AI
-7. FEAT-004/005: Add/edit/delete spec items and tenders in UI
-8. FEAT-009: Mobile responsive polish
+7. ~~FEAT-004/005: Add/edit/delete spec items and tenders in UI~~ — Done (v1.4.0)
+8. FEAT-006: Add/edit/delete scenarios in UI
+9. FEAT-007: Custom milestone editing
+10. FEAT-009: Mobile responsive polish

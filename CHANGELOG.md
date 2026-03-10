@@ -11,6 +11,16 @@
 
 ## Changelog
 
+### v1.4.0 — 2026-03-10 (Add/Edit/Delete Spec Items & Tenders)
+
+- **FEAT-004:** Full CRUD for spec items — add via modal (category, item, unit, qty, notes, estimate range), edit via pre-filled modal, delete with confirmation that cascades to all tenders and scenarios
+- **FEAT-005:** Full CRUD for tenders — add via modal (builder name, auto-creates empty pricing for all spec items), delete with confirmation (auto-selects another tender, warns about AI Estimate regeneration), rename builder name inline (double-click column header), edit per-item pricing/included/notes inline in the comparison matrix (click any cell to edit)
+
+### FEAT-004 — done
+
+- **FEAT-004 (Part 1):** Add new spec items via UI — "Add Item" button on the Tender Comparison tab opens a modal with fields for category (dropdown), item name, unit, quantity, spec notes, and eLow/eMid/eHigh estimates. New items get a unique ID, status "confirmed" (green dot), appear in the comparison matrix with empty tender pricing, and are auto-included in all scenarios. Persists to localStorage.
+- **FEAT-004 (Part 2):** Edit and delete spec items via UI — Each row in the comparison matrix has "Edit" and "Del" buttons. Edit opens the same modal pre-filled with the item's current values; saving updates the specItems array in place. Delete shows a confirmation dialog ("Delete [item name]? This will also remove it from all tenders and scenarios.") and on confirm removes the item from specItems, all tender items, and all scenario itemsIncluded lists. All changes persist to localStorage.
+
 ### v1.3.0 — 2026-03-10 (Partial Spec Merge, Location Estimates, Flexible Quotes)
 
 - **FEAT-016:** Partial spec merge with confirmation — AI-parsed items shown in a review modal where user selects which to add, overwrite, or skip. No more destructive full-replace on re-parse.
@@ -60,8 +70,8 @@
 | FEAT-001 | medium | open | Data export/import as JSON | Allow backup and transfer between devices | 2026-03-10 |
 | FEAT-002 | medium | open | Cross-device sync | Replace localStorage with cloud storage or simple backend | 2026-03-10 |
 | FEAT-003 | low | open | Print-friendly / PDF export view | Clean layout for sharing with builder or partner | 2026-03-10 |
-| FEAT-004 | medium | open | Add/edit/delete spec items in UI | Currently requires code change to modify spec items | 2026-03-10 |
-| FEAT-005 | medium | open | Add/edit/delete tenders in UI | Currently requires code change to add new tenders | 2026-03-10 |
+| FEAT-004 | medium | done | Add/edit/delete spec items in UI | Part 1: add via modal. Part 2: edit (pre-filled modal) + delete (with confirmation) on each row | 2026-03-10 |
+| FEAT-005 | medium | done | Add/edit/delete tenders in UI | Add/delete tenders, rename builder, edit per-item pricing/included/notes inline | 2026-03-10 |
 | FEAT-006 | low | open | Add/edit/delete scenarios in UI | Can currently edit items within scenarios but not create new ones | 2026-03-10 |
 | FEAT-007 | medium | open | Custom milestone editing | Allow user to change milestone names, dates, and percentages | 2026-03-10 |
 | FEAT-008 | low | open | Photo/receipt attachment per item | Link images to owner-supplied items or milestone payments | 2026-03-10 |
@@ -91,6 +101,8 @@
 | FEAT-016 | Partial spec merge with confirmation | Review modal to add/overwrite/skip parsed items, no destructive full-replace | 2026-03-10 |
 | FEAT-017 | Location-based cost estimates | eLow/eMid/eHigh per spec item tuned to user's area, dashboard tier breakdown | 2026-03-10 |
 | FEAT-018 | Flexible quote selection with tiers | Owner-supplied options tagged Budget/Mid/Premium, AI Estimate tender auto-generated | 2026-03-10 |
+| FEAT-004 | Add/edit/delete spec items in UI | Part 1: add via modal. Part 2: edit + delete with confirmation on each comparison matrix row | 2026-03-10 |
+| FEAT-005 | Add/edit/delete tenders in UI | Add/delete tenders, rename builder inline, edit per-item pricing/included/notes inline in matrix | 2026-03-10 |
 
 ---
 
