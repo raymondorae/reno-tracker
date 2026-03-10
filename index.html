@@ -640,6 +640,14 @@ Rules:
         };
       }, [data]);
 
+      // Discover unique categories from current data (must be before early return to preserve hook order)
+      const activeCats = useMemo(() => {
+        if (!data) return [];
+        const cats = [];
+        data.specItems.forEach(s => { if (!cats.includes(s.category)) cats.push(s.category); });
+        return cats;
+      }, [data]);
+
       if (loading || !data) {
         return (
           <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
@@ -681,12 +689,6 @@ Rules:
         return { ...sc, builderCost, ownerCost, total, withinBudget, savings };
       });
 
-      // Discover unique categories from current data
-      const activeCats = useMemo(() => {
-        const cats = [];
-        data.specItems.forEach(s => { if (!cats.includes(s.category)) cats.push(s.category); });
-        return cats;
-      }, [data]);
 
       // --- Render Tabs ---
 
