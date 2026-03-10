@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Renovation Tracker</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet"/>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config={theme:{extend:{fontFamily:{sans:['DM Sans','system-ui','sans-serif']}}}}</script>
@@ -16,6 +16,7 @@
 <div id="root"></div>
 <script type="text/babel">
 const{useState,useEffect,useCallback,useMemo,useRef}=React;
+const DEBUG=false;
 const PKK="reno-tracker-projects",APK="reno-tracker-active-project",AKK="reno-tracker-ak";
 function projKey(id){return"reno-tracker-proj-"+id}
 const fmt=n=>new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP",minimumFractionDigits:0,maximumFractionDigits:0}).format(n||0);
@@ -32,7 +33,7 @@ const Xi=()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="c
 
 function UZ({label,desc,files,onAdd,onRemove}){const ref=useRef(null);const[drag,setDrag]=useState(false);function hf(fl){Array.from(fl).forEach(f=>{if(!f.type.match(/pdf|image\/(png|jpe?g)/))return;const r=new FileReader();r.onload=e=>{onAdd({name:f.name,type:f.type,size:f.size,data:e.target.result,date:new Date().toISOString().slice(0,10)})};r.readAsDataURL(f)})}return(<div className={"border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all "+(drag?"border-amber-400 bg-amber-950/20":"border-zinc-700 hover:border-zinc-500")} onDragOver={e=>{e.preventDefault();setDrag(true)}} onDragLeave={()=>setDrag(false)} onDrop={e=>{e.preventDefault();setDrag(false);hf(e.dataTransfer.files)}} onClick={()=>ref.current&&ref.current.click()}><input ref={ref} type="file" multiple accept=".pdf,image/png,image/jpeg" className="hidden" onChange={e=>hf(e.target.files)}/><div className="text-amber-400 text-2xl mb-2">↑</div><div className="text-zinc-300 font-medium">{label}</div><div className="text-zinc-500 text-sm mt-1">{desc}</div><div className="text-zinc-600 text-xs mt-2">PDF or images · multiple files · drag & drop or click</div>{files.length>0&&<div className="mt-4 space-y-2 text-left" onClick={e=>e.stopPropagation()}>{files.map((f,i)=><div key={i} className="flex items-center justify-between bg-zinc-800/50 rounded px-3 py-2"><div><div className="text-sm text-zinc-300">{f.builderName?<span className="text-amber-400 mr-2">[{f.builderName}]</span>:null}{f.name}</div><div className="text-xs text-zinc-600">{f.date}</div></div><button onClick={()=>onRemove(i)} className="text-zinc-600 hover:text-red-400 text-xs">Remove</button></div>)}</div>}</div>)}
 
-async function aiCall(ak,msgs,sys){const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":ak,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:16384,system:sys,messages:msgs})});if(!r.ok)throw new Error("API "+r.status);const d=await r.json();const text=d.content.map(b=>b.text||"").join("");const truncated=d.stop_reason==="max_tokens";if(truncated)console.warn("AI response was truncated (hit max_tokens limit). JSON may be incomplete. Try reducing document size or parsing in sections.");return{text,truncated}}
+async function aiCall(ak,msgs,sys){const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":ak,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:16384,system:sys,messages:msgs})});if(!r.ok)throw new Error("API "+r.status);const d=await r.json();const text=d.content.map(b=>b.text||"").join("");const truncated=d.stop_reason==="max_tokens";if(truncated&&DEBUG)console.warn("AI response was truncated (hit max_tokens limit). JSON may be incomplete. Try reducing document size or parsing in sections.");return{text,truncated}}
 
 function repairTruncatedJSON(s){
 let t=s;
@@ -53,12 +54,12 @@ let s=raw.replace(/```(?:json|JSON)?\s*\n?/g,"").trim();
 const fi=Math.min(s.indexOf("{")>=0?s.indexOf("{"):Infinity,s.indexOf("[")>=0?s.indexOf("["):Infinity);
 const li=Math.max(s.lastIndexOf("}"),s.lastIndexOf("]"));
 if(fi!==Infinity&&li>=fi)s=s.slice(fi,li+1);
-try{const r=JSON.parse(s);console.log("extractJSON: parsed on first try");return r}catch(e){}
-try{const rep=repairTruncatedJSON(s);const r=JSON.parse(rep);console.warn("extractJSON: parsed after truncation repair — some data may be missing");return r}catch(e){}
-const m=raw.match(/\{[\s\S]*\}/);if(m){try{const r=JSON.parse(m[0]);console.log("extractJSON: parsed via regex fallback");return r}catch(e){}
-try{const rep=repairTruncatedJSON(m[0]);const r=JSON.parse(rep);console.warn("extractJSON: parsed regex match after repair — some data may be missing");return r}catch(e){}}
+try{const r=JSON.parse(s);if(DEBUG)console.log("extractJSON: parsed on first try");return r}catch(e){}
+try{const rep=repairTruncatedJSON(s);const r=JSON.parse(rep);if(DEBUG)console.warn("extractJSON: parsed after truncation repair — some data may be missing");return r}catch(e){}
+const m=raw.match(/\{[\s\S]*\}/);if(m){try{const r=JSON.parse(m[0]);if(DEBUG)console.log("extractJSON: parsed via regex fallback");return r}catch(e){}
+try{const rep=repairTruncatedJSON(m[0]);const r=JSON.parse(rep);if(DEBUG)console.warn("extractJSON: parsed regex match after repair — some data may be missing");return r}catch(e){}}
 const m2=raw.match(/\[[\s\S]*\]/);if(m2)try{return JSON.parse(m2[0])}catch(e){}
-console.error("extractJSON failed. Raw response (first 500 chars):",raw.slice(0,500));
+if(DEBUG)console.error("extractJSON failed. Raw response (first 500 chars):",raw.slice(0,500));
 throw new Error("JSON parse failed — check browser console for raw AI response")}
 
 const dd={projectName:"My Renovation",totalBudget:250000,contingencyPct:15,location:"Surrey",
@@ -201,7 +202,7 @@ const sys=`UK quantity surveyor. Map tender items to spec IDs. Flag deviations a
 CRITICAL: Your entire response MUST be a single valid JSON object. Do NOT wrap in markdown code fences. Do NOT include any text before or after the JSON. Do NOT add commentary or explanation. Start with { and end with }.
 For each item, include a "tenderComponents" array breaking down what the tender actually quoted. Each component: {"description":"6x DSSO above counter","qty":"6","unitCost":50,"subtotal":300}. If the tender doesn't itemise components, return an empty array [].
 Format: {"builderName":"${bn}","totalPrice":0,"items":{"100":{"price":4500,"included":true,"notes":"","tenderComponents":[{"description":"Component detail","qty":"1","unitCost":null,"subtotal":4500}]}}}`;
-setPm("AI analysing tender from "+bn+"...");const{text:resp,truncated:trnc}=await aiCall(ak,[{role:"user",content}],sys);if(trnc)console.warn("Tender response was truncated — some items may be missing from the parsed result");
+setPm("AI analysing tender from "+bn+"...");const{text:resp,truncated:trnc}=await aiCall(ak,[{role:"user",content}],sys);if(trnc&&DEBUG)console.warn("Tender response was truncated — some items may be missing from the parsed result");
 let p;try{p=extractJSON(resp)}catch(e){throw e}
 const pitems={};Object.entries(p.items||{}).forEach(([k,v])=>{pitems[k]={price:v.price||0,included:v.included!==false,notes:v.notes||"",tenderComponents:(v.tenderComponents||[]).map(c=>({description:c.description||"",qty:String(c.qty||"1"),unitCost:c.unitCost!=null?c.unitCost:null,subtotal:c.subtotal||0}))}});
 const nt={id:"t_"+Date.now(),name:p.builderName||bn,submitted:new Date().toISOString().slice(0,10),totalPrice:p.totalPrice||Object.values(pitems).reduce((s,i)=>s+(i.included?i.price:0),0),status:"confirmed",items:pitems};
@@ -341,7 +342,7 @@ return<div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-c
 
 /* ── RENDER SECTIONS ── */
 const rDash=()=><div className="space-y-6">
-<Cd cn="p-4"><div className="flex items-center justify-between mb-3"><span className="text-xs text-zinc-500 uppercase tracking-wider">Estimated Cost by Tier</span><div className="flex items-center gap-2"><span className="text-xs text-zinc-500">Area:</span><input value={data.location||""} onChange={e=>save({...data,location:e.target.value})} className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-300 w-32" placeholder="e.g. Surrey"/></div></div>
+<Cd cn="p-4"><div className="flex items-center justify-between mb-3 flex-wrap gap-2"><span className="text-xs text-zinc-500 uppercase tracking-wider">Estimated Cost by Tier</span><div className="flex items-center gap-3 flex-wrap"><div className="flex items-center gap-1"><span className="text-xs text-zinc-500">Budget:</span><span className="text-xs text-zinc-600">£</span><input type="number" value={data.totalBudget||""} onChange={e=>save({...data,totalBudget:Number(e.target.value)||0})} className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-300 w-24 text-right tn" placeholder="250000"/></div><div className="flex items-center gap-1"><span className="text-xs text-zinc-500">Contingency:</span><input type="number" value={data.contingencyPct} onChange={e=>save({...data,contingencyPct:Math.max(0,Math.min(100,Number(e.target.value)||0))})} className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-300 w-14 text-right tn" min="0" max="100"/><span className="text-xs text-zinc-500">%</span></div><div className="flex items-center gap-1"><span className="text-xs text-zinc-500">Area:</span><input value={data.location||""} onChange={e=>save({...data,location:e.target.value})} className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-300 w-32" placeholder="e.g. Surrey"/></div></div></div>
 <div className="grid grid-cols-3 gap-4">{[{k:"l",n:"Budget",c:"blue",v:tt.l},{k:"m",n:"Mid-Range",c:"amber",v:tt.m},{k:"h",n:"Premium",c:"purple",v:tt.h}].map(x=><div key={x.k} className="p-3 rounded-lg border border-zinc-800"><div className={"text-xs uppercase text-"+x.c+"-400"}>{x.n}</div><div className={"text-xl font-bold tn mt-1 text-"+x.c+"-300"}>{fmt(x.v)}</div><div className={"text-xs mt-1 "+(x.v<=ba?"text-emerald-500":"text-red-400")}>{ba>0?(x.v<=ba?pct(x.v/ba*100)+" of budget":"Over by "+fmt(x.v-ba)):"—"}</div></div>)}</div></Cd>
 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[{l:"Total Budget",v:fmt(data.totalBudget),s:"inc. "+pct(data.contingencyPct)+" contingency",c:"text-zinc-100"},{l:"Active Cost",v:fmt(tcp),s:"Builder "+fmt(cv)+" + Owner "+fmt(ot.b),c:tcp>ba?"text-red-400":"text-emerald-400"},{l:"Remaining",v:fmt(br),s:"of "+fmt(ba)+" available",c:br<0?"text-red-400":"text-emerald-400"},{l:"Paid",v:fmt(tp),s:pct(cv?tp/cv*100:0)+" of contract",c:"text-amber-300"}].map((x,i)=><Cd key={i} cn="p-4"><div className="text-xs text-zinc-500 uppercase mb-1">{x.l}</div><div className={"text-xl font-bold tn "+x.c}>{x.v}</div><div className="text-xs text-zinc-600 mt-1">{x.s}</div></Cd>)}</div>
 <Cd cn="p-4"><div className="flex justify-between items-center mb-2"><span className="text-xs text-zinc-500 uppercase">Budget Bar</span><span className="text-xs text-zinc-400">{pct(ba?tcp/ba*100:0)}</span></div><div className="h-5 bg-zinc-800 rounded-full overflow-hidden flex"><div className="bg-amber-500/80 h-full" style={{width:(data.totalBudget?Math.min(100,cv/data.totalBudget*100):0)+"%"}}/><div className="bg-blue-500/60 h-full" style={{width:(data.totalBudget?Math.min(100-cv/data.totalBudget*100,ot.b/data.totalBudget*100):0)+"%"}}/><div className="bg-zinc-700/60 h-full" style={{width:data.contingencyPct+"%"}}/></div><div className="flex gap-4 mt-2 text-xs text-zinc-500"><span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-500/80"/>Builder</span><span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-500/60"/>Owner</span><span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-zinc-700/60"/>Contingency</span></div></Cd>

@@ -8,7 +8,7 @@
 
 **App:** Renovation Budget & Project Tracker
 **Type:** Static single-page web app (no build step)
-**Stack:** HTML, React 18 (CDN), Tailwind CSS (CDN), Babel standalone
+**Stack:** HTML, React 18 (CDN, production builds), Tailwind CSS (CDN), Babel standalone
 **Hosting:** Vercel (static deployment via GitHub auto-deploy)
 **Repo:** github.com/raymondorae/reno-tracker
 **Data persistence:** Browser localStorage (multi-project: `reno-tracker-projects`, `reno-tracker-active-project`, `reno-tracker-proj-{id}`)
@@ -36,7 +36,7 @@ Single-file architecture — all React components, default data, and styling liv
 
 | Module | Status | Description |
 |--------|--------|-------------|
-| Dashboard | Live | Budget overview, utilisation bar, tender selector, issue summary, milestone overview |
+| Dashboard | Live | Budget overview with editable budget/contingency/area, utilisation bar, tender selector, issue summary, milestone overview |
 | Tender Comparison | Live (v5) | Upload zones, AI spec parsing with merge confirmation, AI tender parsing, comparison matrix with estimate ranges and inline estimate editing, status indicators, inline cell editing, add/delete tenders, rename builders, clear estimates |
 | Milestones | Live | Payment schedule by contract %, status toggles (pending/partial/paid/overdue) |
 | Owner Supplied | Live (v3) | Multi-option with tier tags (Budget/Mid/Premium), add real quotes, add new items, ordered/delivered toggles |
@@ -101,7 +101,7 @@ This runs entirely client-side. No backend needed. User provides their own Anthr
 
 ## Current State
 
-- **Version:** 1.6.0
+- **Version:** 1.7.0
 - **Last updated:** 2026-03-10
 - **Multi-project:** Create, switch, delete, rename independent projects. Auto-migration from old single-key format. Demo project included by default. Blank projects start empty with graceful empty states across all tabs.
 - **Sample data:** 18 spec items (with eLow/eMid/eHigh estimates), 3 sample tenders, 9 milestones, 9 owner-supplied items (with Budget/Mid/Premium tiers), 4 scenarios
@@ -121,6 +121,7 @@ This runs entirely client-side. No backend needed. User provides their own Anthr
 5. ~~FEAT-004/005: Add/edit/delete spec items and tenders in UI~~ — Done (v1.4.0)
 6. ~~FEAT-019: Multi-project support~~ — Done (v1.5.0)
 7. ~~FEAT-021: Two-mode spec parsing, selective estimation, manual entry~~ — Done (v1.6.0)
-8. FEAT-006: Add/edit/delete scenarios in UI
-9. FEAT-007: Custom milestone editing
-10. FEAT-009: Mobile responsive polish
+8. ~~FEAT-024: Budget & contingency editing~~ — Done (v1.7.0)
+9. FEAT-006: Add/edit/delete scenarios in UI
+10. FEAT-007: Custom milestone editing
+11. FEAT-009: Mobile responsive polish

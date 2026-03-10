@@ -11,6 +11,20 @@
 
 ## Changelog
 
+### v1.7.0 — 2026-03-10 (Budget Editing, Production Builds, Contingency Editing)
+
+- **FEAT-024:** Editable budget and contingency — inline number inputs on the Dashboard (alongside area) let users set their total budget (£) and contingency percentage. Values persist to localStorage. Defaults preserved for existing users (£250k / 15%).
+- **Production React builds:** Switched CDN from `react.development.min.js` to `react.production.min.js` (and ReactDOM equivalent) for faster runtime and no dev-mode warnings.
+- **DEBUG-gated console output:** All `console.log`, `console.warn`, and `console.error` calls gated behind a `DEBUG` flag (default `false`). Set `DEBUG=true` in source to re-enable diagnostic logging.
+
+### FEAT-024 — done (Budget & Contingency Editing)
+
+- Editable total budget field (number input with £ prefix) on Dashboard, persists via existing `save()` to localStorage.
+- Editable contingency percentage field (0–100, clamped) on Dashboard, persists the same way.
+- Both inputs sit alongside the existing Area input in the "Estimated Cost by Tier" card header.
+- No data model changes — `totalBudget` and `contingencyPct` already existed in the data model. This adds the missing UI.
+- Existing users keep their current values (demo: £250k/15%, new projects: £0/10%).
+
 ### BUG-006 — done (Collapsible categories not working)
 
 - **Root cause:** `CATS.map()` returned nested arrays with `null` entries for empty categories inside `<tbody>`. React's reconciliation can fail to properly re-render conditionally shown `<tr>` elements when the array structure is `[[<tr/>, <tr/>], null, [<tr/>], ...]`.
@@ -165,7 +179,7 @@
 | FEAT-019 | high | done | Multi-project support | Create, switch, delete, rename projects. Per-project data isolation. Auto-migration from old format. | 2026-03-10 |
 | FEAT-020 | high | done | Component breakdown for spec items and tenders | Part 1: data model + AI parsing + merge modal label. Part 2: expandable sub-rows in comparison matrix with tender component comparison. | 2026-03-10 |
 | FEAT-021 | high | done | Two-mode spec parsing, selective estimation & manual entry | Part 1: two parse buttons, manual status, conditional AI Estimate tender. Part 2: per-item, per-section, and bulk estimation with progress. Part 3: inline manual estimate editing, clear button. | 2026-03-10 |
-| FEAT-024 | high | open | Budget input/editing | No visible way for users to input or edit their total budget number. Need a budget setting field on Dashboard or Settings. | 2026-03-10 |
+| FEAT-024 | high | done | Budget input/editing | Editable budget and contingency % inputs on Dashboard. | 2026-03-10 |
 | FEAT-025 | high | open | User authentication and session persistence | Add login/credential protection so users can safeguard projects and save work across sessions (cloud storage). | 2026-03-10 |
 | FEAT-026 | medium | open | Link to Homegrown app | Shared login page with home screen showing both Renovation Tracker and Homegrown app options. | 2026-03-10 |
 | FEAT-027 | high | open | Minimise AI token costs | Investigate: batching, caching parsed results, using Haiku for extraction and Sonnet only for estimates, reducing prompt size, client-side caching of AI responses. | 2026-03-10 |
@@ -196,6 +210,7 @@
 | FEAT-021 | Two-mode spec parsing, selective estimation & manual entry | Part 1: extract-only vs with-estimates modes. Part 2: per-item ✦ button, per-section Est, bulk Get All Estimates with progress. Part 3: inline manual estimate editing (click Range column), clear estimates button. | 2026-03-10 |
 | BUG-005 | Extract Items button misleadingly showed estimates | Merge modal shows "No estimates" for extract-only items. Upload zone desc neutralised. AI user message differentiated. Hint text under buttons. | 2026-03-10 |
 | BUG-006 | Collapsible categories not working | Changed CATS.map() to CATS.flatMap() with return [] instead of return null — gives React a flat array for proper reconciliation. | 2026-03-10 |
+| FEAT-024 | Budget & contingency editing | Inline editable budget (£) and contingency (%) inputs on Dashboard. Production React builds. DEBUG-gated console output. | 2026-03-10 |
 
 ---
 
