@@ -42,21 +42,23 @@
       projectName: "My Renovation",
       totalBudget: 250000,
       contingencyPct: 15,
+      specDocuments: [],
+      tenderDocuments: [],
       specItems: [
         { id: 1, category: "Demolition", item: "Strip out existing kitchen", unit: "item", qty: 1, specNotes: "Full removal inc. disposal" },
         { id: 2, category: "Demolition", item: "Strip out bathroom x2", unit: "item", qty: 2, specNotes: "Full removal inc. disposal" },
-        { id: 3, category: "Structural", item: "Steel beam — kitchen knock-through", unit: "item", qty: 1, specNotes: "RSJ per engineer spec" },
+        { id: 3, category: "Structural", item: "Steel beam \u2014 kitchen knock-through", unit: "item", qty: 1, specNotes: "RSJ per engineer spec" },
         { id: 4, category: "Structural", item: "Underpinning to rear wall", unit: "lm", qty: 6, specNotes: "As per structural engineer report" },
         { id: 5, category: "Electrical", item: "Full rewire", unit: "item", qty: 1, specNotes: "Consumer unit + all circuits" },
-        { id: 6, category: "Electrical", item: "Lighting — kitchen spots x12", unit: "item", qty: 12, specNotes: "LED downlights, dimmable" },
+        { id: 6, category: "Electrical", item: "Lighting \u2014 kitchen spots x12", unit: "item", qty: 12, specNotes: "LED downlights, dimmable" },
         { id: 7, category: "Plumbing", item: "First fix plumbing", unit: "item", qty: 1, specNotes: "All hot/cold runs, waste" },
-        { id: 8, category: "Plumbing", item: "Underfloor heating — ground floor", unit: "sqm", qty: 45, specNotes: "Wet system, zoned" },
+        { id: 8, category: "Plumbing", item: "Underfloor heating \u2014 ground floor", unit: "sqm", qty: 45, specNotes: "Wet system, zoned" },
         { id: 9, category: "Plastering", item: "Re-plaster throughout", unit: "sqm", qty: 280, specNotes: "Skim finish to all walls" },
         { id: 10, category: "Kitchen", item: "Kitchen install", unit: "item", qty: 1, specNotes: "Units, worktop, splashback" },
         { id: 11, category: "Bathrooms", item: "Family bathroom fit-out", unit: "item", qty: 1, specNotes: "Full tile, sanitaryware, screen" },
         { id: 12, category: "Bathrooms", item: "En-suite fit-out", unit: "item", qty: 1, specNotes: "Walk-in shower, vanity, WC" },
-        { id: 13, category: "Flooring", item: "Engineered oak — ground floor", unit: "sqm", qty: 45, specNotes: "180mm wide plank, oiled" },
-        { id: 14, category: "Flooring", item: "Carpet — bedrooms + stairs", unit: "sqm", qty: 60, specNotes: "80% wool twist, underlay" },
+        { id: 13, category: "Flooring", item: "Engineered oak \u2014 ground floor", unit: "sqm", qty: 45, specNotes: "180mm wide plank, oiled" },
+        { id: 14, category: "Flooring", item: "Carpet \u2014 bedrooms + stairs", unit: "sqm", qty: 60, specNotes: "80% wool twist, underlay" },
         { id: 15, category: "Decoration", item: "Full decoration throughout", unit: "item", qty: 1, specNotes: "2 coats emulsion walls, satinwood woodwork" },
         { id: 16, category: "External", item: "Patio / landscaping", unit: "item", qty: 1, specNotes: "Porcelain paving 30sqm + turf" },
         { id: 17, category: "Windows", item: "Replace all windows x8", unit: "item", qty: 8, specNotes: "Aluminium double-glazed, anthracite" },
@@ -64,7 +66,7 @@
       ],
       tenders: [
         {
-          id: "t1", name: "Builder A — Smith & Sons", submitted: "2026-03-01", totalPrice: 228000,
+          id: "t1", name: "Builder A \u2014 Smith & Sons", submitted: "2026-03-01", totalPrice: 228000,
           items: {
             1: { price: 4500, included: true, notes: "" },
             2: { price: 6000, included: true, notes: "" },
@@ -75,7 +77,7 @@
             7: { price: 7200, included: true, notes: "" },
             8: { price: 11500, included: true, notes: "Quoted for 40sqm not 45" },
             9: { price: 14000, included: true, notes: "" },
-            10: { price: 22000, included: true, notes: "Install only — kitchen owner-supplied" },
+            10: { price: 22000, included: true, notes: "Install only \u2014 kitchen owner-supplied" },
             11: { price: 18000, included: true, notes: "" },
             12: { price: 14000, included: true, notes: "" },
             13: { price: 8500, included: true, notes: "Supply & fit" },
@@ -87,12 +89,12 @@
           }
         },
         {
-          id: "t2", name: "Builder B — ProBuild Ltd", submitted: "2026-03-05", totalPrice: 195000,
+          id: "t2", name: "Builder B \u2014 ProBuild Ltd", submitted: "2026-03-05", totalPrice: 195000,
           items: {
             1: { price: 3800, included: true, notes: "" },
             2: { price: 5200, included: true, notes: "" },
             3: { price: 7800, included: true, notes: "Excludes padstones" },
-            4: { price: 0, included: false, notes: "NOT INCLUDED — says specialist needed" },
+            4: { price: 0, included: false, notes: "NOT INCLUDED \u2014 says specialist needed" },
             5: { price: 8800, included: true, notes: "" },
             6: { price: 2800, included: true, notes: "Non-dimmable quoted" },
             7: { price: 6500, included: true, notes: "" },
@@ -101,7 +103,7 @@
             10: { price: 18000, included: true, notes: "Install only" },
             11: { price: 15500, included: true, notes: "Tiling to half height only" },
             12: { price: 11000, included: true, notes: "Shower tray not walk-in" },
-            13: { price: 7200, included: true, notes: "Supply & fit — 150mm plank" },
+            13: { price: 7200, included: true, notes: "Supply & fit \u2014 150mm plank" },
             14: { price: 4800, included: true, notes: "Synthetic carpet" },
             15: { price: 10500, included: true, notes: "" },
             16: { price: 0, included: false, notes: "NOT INCLUDED" },
@@ -110,7 +112,7 @@
           }
         },
         {
-          id: "t3", name: "Builder C — Heritage Homes", submitted: "2026-03-08", totalPrice: 268000,
+          id: "t3", name: "Builder C \u2014 Heritage Homes", submitted: "2026-03-08", totalPrice: 268000,
           items: {
             1: { price: 5200, included: true, notes: "Inc. skip hire" },
             2: { price: 7000, included: true, notes: "Inc. skip hire" },
@@ -147,9 +149,9 @@
       ownerSupplied: [
         { id: "os1", item: "Kitchen units & worktop", supplier: "Howdens", budget: 12000, actual: 0, ordered: false, delivered: false, notes: "Shaker style, quartz top" },
         { id: "os2", item: "Kitchen appliances (oven, hob, extractor, dishwasher, fridge)", supplier: "AO.com", budget: 5500, actual: 0, ordered: false, delivered: false, notes: "Bosch / Neff range" },
-        { id: "os3", item: "Bathroom sanitaryware — family", supplier: "Victorian Plumbing", budget: 3500, actual: 0, ordered: false, delivered: false, notes: "Bath, basin, WC, shower" },
-        { id: "os4", item: "Bathroom sanitaryware — en-suite", supplier: "Victorian Plumbing", budget: 2800, actual: 0, ordered: false, delivered: false, notes: "Walk-in tray, vanity, WC" },
-        { id: "os5", item: "Tiles — bathrooms", supplier: "Mandarin Stone", budget: 3000, actual: 0, ordered: false, delivered: false, notes: "Porcelain large format" },
+        { id: "os3", item: "Bathroom sanitaryware \u2014 family", supplier: "Victorian Plumbing", budget: 3500, actual: 0, ordered: false, delivered: false, notes: "Bath, basin, WC, shower" },
+        { id: "os4", item: "Bathroom sanitaryware \u2014 en-suite", supplier: "Victorian Plumbing", budget: 2800, actual: 0, ordered: false, delivered: false, notes: "Walk-in tray, vanity, WC" },
+        { id: "os5", item: "Tiles \u2014 bathrooms", supplier: "Mandarin Stone", budget: 3000, actual: 0, ordered: false, delivered: false, notes: "Porcelain large format" },
         { id: "os6", item: "Internal doors x10", supplier: "Howdens", budget: 2500, actual: 0, ordered: false, delivered: false, notes: "Oak veneer, pre-finished" },
         { id: "os7", item: "Door handles / ironmongery", supplier: "From The Anvil", budget: 1200, actual: 0, ordered: false, delivered: false, notes: "Matt black throughout" },
         { id: "os8", item: "Light fittings", supplier: "TBC", budget: 2000, actual: 0, ordered: false, delivered: false, notes: "Pendants, wall lights, exterior" },
@@ -159,7 +161,7 @@
         { id: "s1", name: "Full spec as planned", itemsIncluded: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18], ownerItemsIncluded: ["os1","os2","os3","os4","os5","os6","os7","os8","os9"], active: true },
         { id: "s2", name: "Defer patio & landscaping", itemsIncluded: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,17,18], ownerItemsIncluded: ["os1","os2","os3","os4","os5","os6","os7","os8","os9"], active: false },
         { id: "s3", name: "Defer patio + keep existing windows", itemsIncluded: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,18], ownerItemsIncluded: ["os1","os2","os3","os4","os5","os6","os7","os8","os9"], active: false },
-        { id: "s4", name: "Budget trim — basic finishes + defer patio", itemsIncluded: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,18], ownerItemsIncluded: ["os1","os2","os3","os4","os5","os6","os7","os8"], active: false },
+        { id: "s4", name: "Budget trim \u2014 basic finishes + defer patio", itemsIncluded: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,18], ownerItemsIncluded: ["os1","os2","os3","os4","os5","os6","os7","os8"], active: false },
       ],
       selectedTender: "t1",
     };
@@ -171,8 +173,6 @@
 
     const pct = (n) => Math.round(n) + "%";
 
-    const CATS = ["Demolition","Structural","Electrical","Plumbing","Plastering","Kitchen","Bathrooms","Flooring","Decoration","External","Windows","Roofing"];
-
     // --- File & AI Helpers ---
 
     const fileToBase64 = (file) => new Promise((resolve, reject) => {
@@ -182,12 +182,11 @@
       reader.readAsDataURL(file);
     });
 
-    const getContentBlock = (file, base64) => {
-      const mt = file.type;
-      if (mt === "application/pdf") {
-        return { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64 } };
+    const docToContentBlock = (doc) => {
+      if (doc.mediaType === "application/pdf") {
+        return { type: "document", source: { type: "base64", media_type: doc.mediaType, data: doc.base64 } };
       }
-      return { type: "image", source: { type: "base64", media_type: mt, data: base64 } };
+      return { type: "image", source: { type: "base64", media_type: doc.mediaType, data: doc.base64 } };
     };
 
     const callAnthropic = async (apiKey, contentBlocks) => {
@@ -207,7 +206,7 @@
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error?.message || `API error ${res.status}`);
+        throw new Error(err.error?.message || ("API error " + res.status));
       }
       const json = await res.json();
       const text = json.content.find(c => c.type === "text")?.text || "";
@@ -228,7 +227,9 @@
       return JSON.parse(sub);
     };
 
-    const SPEC_PARSE_PROMPT = `You are analysing a renovation/building specification document. Extract EVERY line item and categorise them.
+    const SPEC_PARSE_PROMPT = `You are analysing a renovation/building specification document. The document may span multiple pages or files \u2014 read ALL content across every page provided.
+
+Extract EVERY line item and categorise them.
 
 Return a JSON object with this EXACT structure:
 {
@@ -242,7 +243,7 @@ Return a JSON object with this EXACT structure:
 
 Rules:
 - specItems are work the BUILDER does (construction, installation, trades work)
-- ownerSupplied are items the HOMEOWNER sources and supplies (kitchen units, appliances, sanitaryware, tiles, doors, handles, light fittings, radiators, worktops — anything the owner buys and the builder just installs)
+- ownerSupplied are items the HOMEOWNER sources and supplies (kitchen units, appliances, sanitaryware, tiles, doors, handles, light fittings, radiators, worktops \u2014 anything the owner buys and the builder just installs)
 - Use these categories for specItems: Demolition, Structural, Electrical, Plumbing, Plastering, Kitchen, Bathrooms, Flooring, Decoration, External, Windows, Roofing, Drainage, Heating, Insulation, Carpentry, General
 - IDs for specItems should be sequential integers starting at 1
 - IDs for ownerSupplied should be "os1", "os2", etc.
@@ -250,11 +251,11 @@ Rules:
 - Set supplier to "TBC" unless the spec names one
 - qty should be a number. If not stated, use 1
 - unit should be one of: item, sqm, lm, nr, m, set
-- Be thorough — extract EVERY item mentioned, even minor ones
+- Be thorough \u2014 extract EVERY item mentioned, even minor ones
 - specNotes should capture key details, dimensions, material specs, etc.
 - Return ONLY valid JSON, no markdown formatting or extra text`;
 
-    const buildTenderParsePrompt = (specItems) => `You are analysing a builder's tender/quote document for a renovation project. Map each quoted item to the spec items below, extract pricing, and flag any deviations or omissions.
+    const buildTenderParsePrompt = (specItems) => `You are analysing a builder's tender/quote document for a renovation project. The document may span multiple pages or files \u2014 read ALL content across every page provided. Map each quoted item to the spec items below, extract pricing, and flag any deviations or omissions.
 
 SPEC ITEMS (the items this tender should be quoting against):
 ${JSON.stringify(specItems.map(s => ({ id: s.id, category: s.category, item: s.item, specNotes: s.specNotes })), null, 2)}
@@ -265,7 +266,7 @@ Return a JSON object with this EXACT structure:
   "totalPrice": 0,
   "items": {
     "1": { "price": 4500, "included": true, "notes": "" },
-    "2": { "price": 0, "included": false, "notes": "NOT INCLUDED — reason" }
+    "2": { "price": 0, "included": false, "notes": "NOT INCLUDED \u2014 reason" }
   }
 }
 
@@ -282,7 +283,7 @@ Rules:
   - Leave empty "" if the item matches the spec exactly
 - Flag deviations like: "Quoted for 40sqm not 45", "uPVC not aluminium", "Excludes X"
 - If a spec item is not mentioned at all in the tender, set included: false with notes: "Not mentioned in tender"
-- Be precise with prices — extract exact GBP amounts from the document
+- Be precise with prices \u2014 extract exact GBP amounts from the document
 - Return ONLY valid JSON, no markdown formatting or extra text`;
 
     // --- UI Components ---
@@ -298,11 +299,9 @@ Rules:
     };
 
     const Tab = ({ label, active, onClick, count }) => (
-      <button
-        onClick={onClick}
+      <button onClick={onClick}
         className={"px-4 py-2.5 text-sm font-medium tracking-wide transition-all relative whitespace-nowrap " +
-          (active ? "text-amber-300 border-b-2 border-amber-400" : "text-zinc-500 hover:text-zinc-300 border-b-2 border-transparent")}
-      >
+          (active ? "text-amber-300 border-b-2 border-amber-400" : "text-zinc-500 hover:text-zinc-300 border-b-2 border-transparent")}>
         {label}
         {count !== undefined && (
           <span className={"ml-1.5 text-xs px-1.5 py-0.5 rounded-full " + (active ? "bg-amber-400/20 text-amber-300" : "bg-zinc-800 text-zinc-500")}>{count}</span>
@@ -340,13 +339,13 @@ Rules:
     );
 
     const UploadIcon = () => (
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
       </svg>
     );
 
     const DocIcon = () => (
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 flex-shrink-0">
         <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
       </svg>
     );
@@ -357,75 +356,6 @@ Rules:
       </svg>
     );
 
-    // --- Upload Zone Component ---
-
-    const UploadZone = ({ label, hint, accept, onFile, file, parsing, parsed, error, onParse, onClear, multiple }) => {
-      const inputRef = useRef(null);
-      const [dragOver, setDragOver] = useState(false);
-
-      const handleDrop = (e) => {
-        e.preventDefault();
-        setDragOver(false);
-        const files = Array.from(e.dataTransfer.files);
-        if (files.length > 0) onFile(multiple ? files : files[0]);
-      };
-
-      const handleSelect = (e) => {
-        const files = Array.from(e.target.files);
-        if (files.length > 0) onFile(multiple ? files : files[0]);
-        e.target.value = "";
-      };
-
-      return (
-        <div className="flex-1">
-          <div className="text-xs text-zinc-500 uppercase tracking-wider mb-2">{label}</div>
-          {!file && !parsed ? (
-            <div
-              onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={handleDrop}
-              onClick={() => inputRef.current?.click()}
-              className={"border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all " +
-                (dragOver ? "border-amber-500 bg-amber-950/20" : "border-zinc-700 hover:border-zinc-500 hover:bg-zinc-900/50")}
-            >
-              <div className="flex justify-center mb-2 text-zinc-500"><UploadIcon /></div>
-              <div className="text-sm text-zinc-400">Drop file here or click to browse</div>
-              <div className="text-xs text-zinc-600 mt-1">{hint}</div>
-              <input ref={inputRef} type="file" accept={accept} onChange={handleSelect} className="hidden" multiple={multiple} />
-            </div>
-          ) : parsed ? (
-            <div className="border border-emerald-800/50 bg-emerald-950/20 rounded-lg p-4">
-              <div className="flex items-center gap-2 text-emerald-400 text-sm">
-                <CheckIcon />
-                <span className="font-medium">Parsed successfully</span>
-              </div>
-              <div className="text-xs text-zinc-500 mt-1">{typeof parsed === "string" ? parsed : "Data loaded into tracker"}</div>
-              <button onClick={onClear} className="text-xs text-zinc-500 hover:text-zinc-300 mt-2 underline">Upload a different file</button>
-            </div>
-          ) : (
-            <div className="border border-zinc-700 rounded-lg p-4">
-              <div className="flex items-center gap-2 text-zinc-300 text-sm">
-                <DocIcon />
-                <span className="truncate flex-1">{Array.isArray(file) ? file.map(f => f.name).join(", ") : file.name}</span>
-                <button onClick={onClear} className="text-zinc-500 hover:text-zinc-300 text-xs">Remove</button>
-              </div>
-              {error && (
-                <div className="text-xs text-red-400 mt-2 bg-red-950/20 border border-red-900/30 rounded px-2 py-1">{error}</div>
-              )}
-              <button
-                onClick={onParse}
-                disabled={parsing}
-                className={"mt-3 w-full flex items-center justify-center gap-2 px-4 py-2 rounded text-sm font-medium transition-all " +
-                  (parsing ? "bg-zinc-700 text-zinc-400 cursor-wait" : "bg-amber-600 hover:bg-amber-500 text-zinc-950")}
-              >
-                {parsing ? <><Spinner size="w-4 h-4" /> Parsing with AI...</> : "Parse with AI"}
-              </button>
-            </div>
-          )}
-        </div>
-      );
-    };
-
     // --- Main App ---
 
     function RenovationTracker() {
@@ -433,22 +363,25 @@ Rules:
       const [activeTab, setActiveTab] = useState("dashboard");
       const [loading, setLoading] = useState(true);
 
-      // API key state
+      // API key
       const [apiKey, setApiKey] = useState("");
       const [showApiKeyModal, setShowApiKeyModal] = useState(false);
       const [apiKeyInput, setApiKeyInput] = useState("");
 
-      // Spec upload state
-      const [specFile, setSpecFile] = useState(null);
+      // Parse state (ephemeral UI only)
       const [specParsing, setSpecParsing] = useState(false);
       const [specParsed, setSpecParsed] = useState(null);
       const [specError, setSpecError] = useState(null);
-
-      // Tender upload state
-      const [tenderFile, setTenderFile] = useState(null);
       const [tenderParsing, setTenderParsing] = useState(false);
       const [tenderParsed, setTenderParsed] = useState(null);
       const [tenderError, setTenderError] = useState(null);
+
+      // Upload UI state
+      const [specDragOver, setSpecDragOver] = useState(false);
+      const [tenderDragOver, setTenderDragOver] = useState(false);
+      const [tenderBuilderName, setTenderBuilderName] = useState("");
+      const specInputRef = useRef(null);
+      const tenderInputRef = useRef(null);
 
       useEffect(() => {
         try {
@@ -483,24 +416,75 @@ Rules:
         setShowApiKeyModal(false);
       };
 
+      // --- Document management ---
+
+      const addSpecDocs = async (files) => {
+        const newDocs = [];
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const b64 = await fileToBase64(file);
+          newDocs.push({
+            id: "sd" + Date.now() + i,
+            filename: file.name,
+            dateUploaded: new Date().toISOString().split("T")[0],
+            base64: b64,
+            mediaType: file.type || "application/pdf",
+          });
+        }
+        const updated = { ...data, specDocuments: [...(data.specDocuments || []), ...newDocs] };
+        save(updated);
+        setSpecParsed(null);
+        setSpecError(null);
+      };
+
+      const removeSpecDoc = (id) => {
+        save({ ...data, specDocuments: (data.specDocuments || []).filter(d => d.id !== id) });
+        setSpecParsed(null);
+      };
+
+      const addTenderDocs = async (files, builderName) => {
+        const newDocs = [];
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const b64 = await fileToBase64(file);
+          newDocs.push({
+            id: "td" + Date.now() + i,
+            builderName: builderName,
+            filename: file.name,
+            dateUploaded: new Date().toISOString().split("T")[0],
+            base64: b64,
+            mediaType: file.type || "application/pdf",
+          });
+        }
+        const updated = { ...data, tenderDocuments: [...(data.tenderDocuments || []), ...newDocs] };
+        save(updated);
+        setTenderParsed(null);
+        setTenderError(null);
+      };
+
+      const removeTenderDoc = (id) => {
+        save({ ...data, tenderDocuments: (data.tenderDocuments || []).filter(d => d.id !== id) });
+        setTenderParsed(null);
+      };
+
       // --- AI Parse Handlers ---
 
       const handleParseSpec = async () => {
         if (!apiKey) { setShowApiKeyModal(true); return; }
-        if (!specFile) return;
+        const docs = data.specDocuments || [];
+        if (docs.length === 0) return;
         setSpecParsing(true);
         setSpecError(null);
         try {
-          const b64 = await fileToBase64(specFile);
-          const contentBlock = getContentBlock(specFile, b64);
-          const rawText = await callAnthropic(apiKey, [contentBlock, { type: "text", text: SPEC_PARSE_PROMPT }]);
+          const contentBlocks = docs.map(docToContentBlock);
+          contentBlocks.push({ type: "text", text: SPEC_PARSE_PROMPT });
+          const rawText = await callAnthropic(apiKey, contentBlocks);
           const parsed = extractJSON(rawText);
 
           if (!parsed.specItems || !Array.isArray(parsed.specItems)) {
             throw new Error("AI response missing specItems array");
           }
 
-          // Ensure IDs are correct
           const specItems = parsed.specItems.map((s, i) => ({
             id: i + 1,
             category: s.category || "General",
@@ -521,27 +505,17 @@ Rules:
             notes: o.notes || "",
           }));
 
-          // Update all scenarios to include all new items
           const allSpecIds = specItems.map(s => s.id);
           const allOwnerIds = ownerSupplied.map(o => o.id);
           const newScenarios = [{
-            id: "s1",
-            name: "Full spec as planned",
-            itemsIncluded: allSpecIds,
-            ownerItemsIncluded: allOwnerIds,
-            active: true,
+            id: "s1", name: "Full spec as planned",
+            itemsIncluded: allSpecIds, ownerItemsIncluded: allOwnerIds, active: true,
           }];
 
-          // Clear existing tenders since spec items have changed
-          const newData = {
-            ...data,
-            specItems,
-            ownerSupplied,
-            scenarios: newScenarios,
-            tenders: [],
-            selectedTender: "",
-          };
-          save(newData);
+          save({
+            ...data, specItems, ownerSupplied, scenarios: newScenarios,
+            tenders: [], selectedTender: "",
+          });
           setSpecParsed(specItems.length + " spec items + " + ownerSupplied.length + " owner-supplied items extracted");
         } catch (e) {
           console.error("Spec parse error:", e);
@@ -551,32 +525,37 @@ Rules:
         }
       };
 
-      const handleParseTender = async () => {
+      const handleParseTenders = async () => {
         if (!apiKey) { setShowApiKeyModal(true); return; }
-        if (!tenderFile) return;
+        const docs = data.tenderDocuments || [];
+        if (docs.length === 0) return;
         if (!data.specItems || data.specItems.length === 0) {
-          setTenderError("Upload and parse your spec document first — tenders are mapped against spec items.");
+          setTenderError("Upload and parse your spec document first \u2014 tenders are mapped against spec items.");
           return;
         }
         setTenderParsing(true);
         setTenderError(null);
         try {
-          const files = Array.isArray(tenderFile) ? tenderFile : [tenderFile];
-          let tendersAdded = 0;
-          let newTenders = [...data.tenders];
+          // Group docs by builder
+          const builderGroups = {};
+          docs.forEach(d => {
+            if (!builderGroups[d.builderName]) builderGroups[d.builderName] = [];
+            builderGroups[d.builderName].push(d);
+          });
 
-          for (const file of files) {
-            const b64 = await fileToBase64(file);
-            const contentBlock = getContentBlock(file, b64);
-            const prompt = buildTenderParsePrompt(data.specItems);
-            const rawText = await callAnthropic(apiKey, [contentBlock, { type: "text", text: prompt }]);
+          let newTenders = [...data.tenders];
+          let tendersAdded = 0;
+
+          for (const [builderName, builderDocs] of Object.entries(builderGroups)) {
+            const contentBlocks = builderDocs.map(docToContentBlock);
+            contentBlocks.push({ type: "text", text: buildTenderParsePrompt(data.specItems) });
+            const rawText = await callAnthropic(apiKey, contentBlocks);
             const parsed = extractJSON(rawText);
 
             if (!parsed.items || typeof parsed.items !== "object") {
-              throw new Error("AI response missing items object for " + file.name);
+              throw new Error("AI response missing items object for " + builderName);
             }
 
-            // Build tender items keyed by spec item ID
             const tenderItems = {};
             data.specItems.forEach(si => {
               const raw = parsed.items[String(si.id)];
@@ -592,25 +571,21 @@ Rules:
             });
 
             const tenderId = "t" + (Date.now() + tendersAdded);
-            const tenderName = parsed.name || file.name.replace(/\.[^.]+$/, "");
+            const tenderName = parsed.name || builderName;
             const total = Number(parsed.totalPrice) || Object.values(tenderItems).reduce((s, i) => s + (i.included ? i.price : 0), 0);
 
             newTenders.push({
-              id: tenderId,
-              name: tenderName,
+              id: tenderId, name: tenderName,
               submitted: new Date().toISOString().split("T")[0],
-              totalPrice: total,
-              items: tenderItems,
+              totalPrice: total, items: tenderItems,
             });
             tendersAdded++;
           }
 
-          const newData = {
-            ...data,
-            tenders: newTenders,
+          save({
+            ...data, tenders: newTenders,
             selectedTender: data.selectedTender || newTenders[0]?.id || "",
-          };
-          save(newData);
+          });
           setTenderParsed(tendersAdded + " tender" + (tendersAdded !== 1 ? "s" : "") + " parsed and added");
         } catch (e) {
           console.error("Tender parse error:", e);
@@ -620,7 +595,7 @@ Rules:
         }
       };
 
-      // --- Derived State ---
+      // --- Derived State (all hooks before early return) ---
 
       const selectedTender = useMemo(() => {
         if (!data) return null;
@@ -640,12 +615,21 @@ Rules:
         };
       }, [data]);
 
-      // Discover unique categories from current data (must be before early return to preserve hook order)
       const activeCats = useMemo(() => {
         if (!data) return [];
         const cats = [];
         data.specItems.forEach(s => { if (!cats.includes(s.category)) cats.push(s.category); });
         return cats;
+      }, [data]);
+
+      const tenderBuilderGroups = useMemo(() => {
+        if (!data) return {};
+        const groups = {};
+        (data.tenderDocuments || []).forEach(d => {
+          if (!groups[d.builderName]) groups[d.builderName] = [];
+          groups[d.builderName].push(d);
+        });
+        return groups;
       }, [data]);
 
       if (loading || !data) {
@@ -656,6 +640,10 @@ Rules:
         );
       }
 
+      // --- Computed values (not hooks, safe after early return) ---
+
+      const specDocs = data.specDocuments || [];
+      const tenderDocs = data.tenderDocuments || [];
       const totalProjectCost = contractValue + ownerSuppliedTotal.budget;
       const contingencyAmount = Math.round(data.totalBudget * data.contingencyPct / 100);
       const budgetAvailable = data.totalBudget - contingencyAmount;
@@ -689,6 +677,37 @@ Rules:
         return { ...sc, builderCost, ownerCost, total, withinBudget, savings };
       });
 
+      // --- Drop handlers ---
+
+      const handleSpecDrop = (e) => {
+        e.preventDefault();
+        setSpecDragOver(false);
+        const files = Array.from(e.dataTransfer.files);
+        if (files.length > 0) addSpecDocs(files);
+      };
+
+      const handleSpecSelect = (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length > 0) addSpecDocs(files);
+        e.target.value = "";
+      };
+
+      const handleTenderDrop = (e) => {
+        e.preventDefault();
+        setTenderDragOver(false);
+        const name = tenderBuilderName.trim();
+        if (!name) { setTenderError("Enter a builder name before uploading files."); return; }
+        const files = Array.from(e.dataTransfer.files);
+        if (files.length > 0) addTenderDocs(files, name);
+      };
+
+      const handleTenderSelect = (e) => {
+        const name = tenderBuilderName.trim();
+        if (!name) { setTenderError("Enter a builder name before uploading files."); e.target.value = ""; return; }
+        const files = Array.from(e.target.files);
+        if (files.length > 0) addTenderDocs(files, name);
+        e.target.value = "";
+      };
 
       // --- Render Tabs ---
 
@@ -784,7 +803,7 @@ Rules:
 
       const renderComparison = () => (
         <div className="space-y-4">
-          {/* Upload Documents Section */}
+          {/* Upload Documents */}
           <Card className="p-5">
             <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Upload Documents</div>
             <div className="text-sm text-zinc-400 mb-4">Upload your spec document and builder tenders. AI will parse them into structured data automatically.</div>
@@ -794,38 +813,124 @@ Rules:
                 <WarningIcon />
                 <span className="text-sm text-amber-300">Set your Anthropic API key first.</span>
                 <button onClick={() => { setApiKeyInput(apiKey); setShowApiKeyModal(true); }}
-                  className="ml-auto text-xs bg-amber-600 hover:bg-amber-500 text-zinc-950 font-medium px-3 py-1 rounded">
-                  Set API Key
-                </button>
+                  className="ml-auto text-xs bg-amber-600 hover:bg-amber-500 text-zinc-950 font-medium px-3 py-1 rounded">Set API Key</button>
               </div>
             )}
 
-            <div className="grid md:grid-cols-2 gap-4">
-              <UploadZone
-                label="Spec Document"
-                hint="PDF or image of your renovation spec"
-                accept=".pdf,image/*"
-                file={specFile}
-                parsing={specParsing}
-                parsed={specParsed}
-                error={specError}
-                onFile={f => { setSpecFile(f); setSpecParsed(null); setSpecError(null); }}
-                onParse={handleParseSpec}
-                onClear={() => { setSpecFile(null); setSpecParsed(null); setSpecError(null); }}
-              />
-              <UploadZone
-                label="Builder Tenders"
-                hint="PDF or image of builder quotes (one or more)"
-                accept=".pdf,image/*"
-                file={tenderFile}
-                parsing={tenderParsing}
-                parsed={tenderParsed}
-                error={tenderError}
-                onFile={f => { setTenderFile(f); setTenderParsed(null); setTenderError(null); }}
-                onParse={handleParseTender}
-                onClear={() => { setTenderFile(null); setTenderParsed(null); setTenderError(null); }}
-                multiple={true}
-              />
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* --- Spec Document Upload --- */}
+              <div>
+                <div className="text-xs text-zinc-500 uppercase tracking-wider mb-2">Spec Document</div>
+                <div
+                  onDragOver={e => { e.preventDefault(); setSpecDragOver(true); }}
+                  onDragLeave={() => setSpecDragOver(false)}
+                  onDrop={handleSpecDrop}
+                  onClick={() => specInputRef.current?.click()}
+                  className={"border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-all " +
+                    (specDragOver ? "border-amber-500 bg-amber-950/20" : "border-zinc-700 hover:border-zinc-500 hover:bg-zinc-900/50")}
+                >
+                  <div className="flex justify-center mb-1 text-zinc-500"><UploadIcon /></div>
+                  <div className="text-sm text-zinc-400">Drop files here or click to browse</div>
+                  <div className="text-xs text-zinc-600 mt-1">PDF, JPG, or PNG \u2014 multiple files OK</div>
+                  <input ref={specInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" onChange={handleSpecSelect} className="hidden" multiple />
+                </div>
+
+                {specDocs.length > 0 && (
+                  <div className="mt-3 space-y-1">
+                    {specDocs.map(doc => (
+                      <div key={doc.id} className="flex items-center gap-2 text-sm bg-zinc-800/50 rounded px-3 py-1.5">
+                        <DocIcon />
+                        <span className="truncate flex-1 text-zinc-300">{doc.filename}</span>
+                        <span className="text-xs text-zinc-600 whitespace-nowrap">{doc.dateUploaded}</span>
+                        <button onClick={() => removeSpecDoc(doc.id)} className="text-zinc-600 hover:text-red-400 transition-colors ml-1" title="Remove">
+                          <XIcon />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {specError && (
+                  <div className="text-xs text-red-400 mt-2 bg-red-950/20 border border-red-900/30 rounded px-3 py-2">{specError}</div>
+                )}
+                {specParsed && (
+                  <div className="mt-2 border border-emerald-800/50 bg-emerald-950/20 rounded px-3 py-2 flex items-center gap-2 text-sm text-emerald-400">
+                    <CheckIcon /><span>{specParsed}</span>
+                  </div>
+                )}
+
+                {specDocs.length > 0 && (
+                  <button onClick={handleParseSpec} disabled={specParsing}
+                    className={"mt-3 w-full flex items-center justify-center gap-2 px-4 py-2 rounded text-sm font-medium transition-all " +
+                      (specParsing ? "bg-zinc-700 text-zinc-400 cursor-wait" : "bg-amber-600 hover:bg-amber-500 text-zinc-950")}>
+                    {specParsing ? <><Spinner size="w-4 h-4" /> Parsing {specDocs.length} file{specDocs.length !== 1 ? "s" : ""} with AI...</> : "Parse spec with AI (" + specDocs.length + " file" + (specDocs.length !== 1 ? "s" : "") + ")"}
+                  </button>
+                )}
+              </div>
+
+              {/* --- Builder Tender Upload --- */}
+              <div>
+                <div className="text-xs text-zinc-500 uppercase tracking-wider mb-2">Builder Tenders</div>
+                <input
+                  type="text"
+                  value={tenderBuilderName}
+                  onChange={e => setTenderBuilderName(e.target.value)}
+                  placeholder="Builder name (e.g. Smith & Sons)"
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-amber-500 mb-2"
+                />
+                <div
+                  onDragOver={e => { e.preventDefault(); setTenderDragOver(true); }}
+                  onDragLeave={() => setTenderDragOver(false)}
+                  onDrop={handleTenderDrop}
+                  onClick={() => { if (tenderBuilderName.trim()) tenderInputRef.current?.click(); else setTenderError("Enter a builder name before uploading files."); }}
+                  className={"border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-all " +
+                    (tenderDragOver ? "border-amber-500 bg-amber-950/20" : "border-zinc-700 hover:border-zinc-500 hover:bg-zinc-900/50")}
+                >
+                  <div className="flex justify-center mb-1 text-zinc-500"><UploadIcon /></div>
+                  <div className="text-sm text-zinc-400">Drop files here or click to browse</div>
+                  <div className="text-xs text-zinc-600 mt-1">PDF, JPG, or PNG \u2014 multiple files per builder</div>
+                  <input ref={tenderInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" onChange={handleTenderSelect} className="hidden" multiple />
+                </div>
+
+                {Object.keys(tenderBuilderGroups).length > 0 && (
+                  <div className="mt-3 space-y-3">
+                    {Object.entries(tenderBuilderGroups).map(([builder, docs]) => (
+                      <div key={builder}>
+                        <div className="text-xs text-amber-400 font-medium mb-1">{builder}</div>
+                        <div className="space-y-1">
+                          {docs.map(doc => (
+                            <div key={doc.id} className="flex items-center gap-2 text-sm bg-zinc-800/50 rounded px-3 py-1.5">
+                              <DocIcon />
+                              <span className="truncate flex-1 text-zinc-300">{doc.filename}</span>
+                              <span className="text-xs text-zinc-600 whitespace-nowrap">{doc.dateUploaded}</span>
+                              <button onClick={() => removeTenderDoc(doc.id)} className="text-zinc-600 hover:text-red-400 transition-colors ml-1" title="Remove">
+                                <XIcon />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {tenderError && (
+                  <div className="text-xs text-red-400 mt-2 bg-red-950/20 border border-red-900/30 rounded px-3 py-2">{tenderError}</div>
+                )}
+                {tenderParsed && (
+                  <div className="mt-2 border border-emerald-800/50 bg-emerald-950/20 rounded px-3 py-2 flex items-center gap-2 text-sm text-emerald-400">
+                    <CheckIcon /><span>{tenderParsed}</span>
+                  </div>
+                )}
+
+                {tenderDocs.length > 0 && (
+                  <button onClick={handleParseTenders} disabled={tenderParsing}
+                    className={"mt-3 w-full flex items-center justify-center gap-2 px-4 py-2 rounded text-sm font-medium transition-all " +
+                      (tenderParsing ? "bg-zinc-700 text-zinc-400 cursor-wait" : "bg-amber-600 hover:bg-amber-500 text-zinc-950")}>
+                    {tenderParsing ? <><Spinner size="w-4 h-4" /> Parsing {Object.keys(tenderBuilderGroups).length} tender{Object.keys(tenderBuilderGroups).length !== 1 ? "s" : ""} with AI...</> : "Parse all tenders with AI (" + Object.keys(tenderBuilderGroups).length + " builder" + (Object.keys(tenderBuilderGroups).length !== 1 ? "s" : "") + ")"}
+                  </button>
+                )}
+              </div>
             </div>
           </Card>
 
@@ -1172,14 +1277,10 @@ Rules:
               <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
                 <div className="text-lg font-bold text-zinc-100 mb-1">Anthropic API Key</div>
                 <div className="text-sm text-zinc-400 mb-4">Your key is stored locally in your browser and never sent anywhere except directly to the Anthropic API.</div>
-                <input
-                  type="password"
-                  value={apiKeyInput}
-                  onChange={e => setApiKeyInput(e.target.value)}
+                <input type="password" value={apiKeyInput} onChange={e => setApiKeyInput(e.target.value)}
                   placeholder="sk-ant-..."
                   className="w-full bg-zinc-800 border border-zinc-600 rounded px-3 py-2 text-sm text-zinc-200 font-mono placeholder-zinc-600 focus:outline-none focus:border-amber-500"
-                  autoFocus
-                />
+                  autoFocus />
                 <div className="flex gap-2 mt-4 justify-end">
                   <button onClick={() => setShowApiKeyModal(false)}
                     className="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-200 rounded hover:bg-zinc-800 transition-all">Cancel</button>

@@ -37,7 +37,7 @@ Single-file architecture — all React components, default data, and styling liv
 | Module | Status | Description |
 |--------|--------|-------------|
 | Dashboard | Live | Budget overview, utilisation bar, tender selector, issue summary, milestone overview |
-| Tender Comparison | Live (v2) | Upload zones for spec doc + builder tenders, AI-powered parsing, spec-to-tender matrix, deviation/omission flags |
+| Tender Comparison | Live (v3) | Multi-file upload zones for spec doc + builder tenders (persistent base64 storage), AI-powered parsing, spec-to-tender matrix, deviation/omission flags |
 | Milestones | Live | Payment schedule by contract %, status toggles (pending/partial/paid/overdue) |
 | Owner Supplied | Live (v1) | Fixtures & fittings budget vs actual, ordered/delivered toggles |
 | Owner Supplied | Planned (v2) | Multiple options per item with selection, add new items via UI |
@@ -56,13 +56,12 @@ All state is held in a single JSON object saved to localStorage. Key entities:
 - **ownerSupplied** — Fixtures/fittings the owner sources (budget, actual, ordered, delivered)
 - **scenarios** — Named sets of included/excluded spec items and owner items for what-if modelling
 
+- **specDocuments** — Uploaded spec document files stored as base64 (id, filename, dateUploaded, base64, mediaType)
+- **tenderDocuments** — Uploaded tender document files stored as base64 (id, builderName, filename, dateUploaded, base64, mediaType), grouped by builder name for display and AI parsing
+
 ### Planned data model changes (v2)
 
 **ownerSupplied.options[]** — Each owner-supplied item gains an `options` array. Each option contains: supplier, description, price, and an `active` boolean. Only the active option feeds into budget calculations.
-
-**specDocument** — Raw uploaded spec doc (stored as base64), used as the source of truth for AI parsing.
-
-**tenderDocuments[]** — Raw uploaded tender responses from builders, each parsed by AI into structured tender data.
 
 ---
 
@@ -77,10 +76,13 @@ The app uses the Anthropic API (client-side fetch to `api.anthropic.com/v1/messa
 This runs entirely client-side. No backend needed. User provides their own Anthropic API key via an in-app modal (stored in localStorage under `reno-tracker-api-key`).
 
 **Key implementation details:**
-- Files are converted to base64 and sent as `document` (PDF) or `image` content blocks
+- Documents are stored as base64 in localStorage within the main `reno-tracker-v2` data object (`specDocuments[]` and `tenderDocuments[]`)
+- Multiple files can be uploaded per section (spec or tender), sent together in a single API call
+- Tender documents are labelled with a builder name and grouped by builder for display and parsing
+- `docToContentBlock` helper converts stored docs to API content blocks (PDF → `document` type, images → `image` type)
 - AI returns structured JSON which is extracted via fence/brace detection
 - Spec parsing clears existing tenders (since IDs change) and creates a single "Full spec" scenario
-- Tender parsing adds new tenders without removing existing ones
+- Tender parsing makes one API call per builder group, adds new tenders without removing existing ones
 - The `extractJSON` helper handles both fenced code blocks and raw JSON in responses
 
 ---
@@ -97,15 +99,18 @@ This runs entirely client-side. No backend needed. User provides their own Anthr
 | Client-side Anthropic API | No backend to manage, runs in browser. User supplies API key. Uses `anthropic-dangerous-direct-browser-access` header for CORS. |
 | API key in localStorage | Separate from app data (`reno-tracker-api-key`), never included in data export/reset |
 | Spec parse clears tenders | When a new spec is parsed, existing tenders are cleared since spec item IDs change |
+| Documents stored as base64 in localStorage | Persists across sessions, no server needed. Trade-off: increases localStorage usage |
+| Tender docs grouped by builder | One API call per builder group enables accurate per-builder tender parsing |
 
 ---
 
 ## Current State
 
-- **Version:** 1.1.0
+- **Version:** 1.2.0
 - **Last updated:** 2026-03-10
 - **Sample data:** 18 spec items, 3 tenders, 9 milestones, 9 owner-supplied items, 4 scenarios
 - **AI features:** Spec doc parsing, tender parsing, auto-population of specItems + ownerSupplied + tenders
+- **Document storage:** Spec docs and tender docs persisted as base64 in localStorage, multi-file support, grouped by builder for tenders
 
 ---
 
