@@ -11,30 +11,6 @@
 
 ## Changelog
 
-### v1.2.0 — 2026-03-10 (Document Management & Multi-file Uploads)
-
-- **FEAT-016:** Persistent document storage — spec docs and tender docs stored as base64 in localStorage within the main `reno-tracker-v2` data object
-- **FEAT-017:** Multi-file spec uploads — upload multiple PDF/image files for the spec document, displayed as a list with filename, date uploaded, and remove button
-- **FEAT-018:** Multi-file tender uploads grouped by builder — user labels each upload with a builder name, tenders displayed grouped by builder with individual file remove buttons
-- **FEAT-019:** Multi-file AI parsing — all files for a section sent together in a single API call so AI can read across multiple pages/documents
-- New data model fields: `specDocuments[]` and `tenderDocuments[]` stored in localStorage
-- Drag-and-drop AND click-to-browse for both upload areas, accepts PDF/JPG/PNG, multiple files at once
-- Replaced ephemeral File-based uploads with persistent base64 document storage
-- Tender parsing now groups documents by builder name and makes one API call per builder group
-- `docToContentBlock` helper converts stored docs to Anthropic API content blocks (PDF → document type, images → image type)
-
-### v1.1.0 — 2026-03-10 (AI Document Parsing)
-
-- **FEAT-011:** Upload zones on Tender Comparison tab — drag-and-drop or click-to-browse for spec document and builder tenders (PDF/image)
-- **FEAT-012:** AI parsing of spec documents — uploads spec to Anthropic API (claude-sonnet-4-20250514), extracts all line items, splits into builder-scope specItems and owner-supplied fixtures, auto-populates both sections
-- **FEAT-013:** AI parsing of builder tenders — uploads each tender, maps items to spec, extracts pricing, flags deviations and omissions, auto-populates comparison matrix
-- **FEAT-015:** Owner-supplied items auto-populated from spec document parsing (extracted by AI alongside spec items)
-- API key management — secure input modal, stored in localStorage, shown in header with status indicator
-- Upload zone component with drag-and-drop, file preview, parse button, loading spinner, success/error states
-- Dynamic category detection — comparison matrix adapts to categories found in parsed spec (not hardcoded)
-- Graceful empty states — dashboard and comparison tab handle zero tenders/spec items cleanly
-- Spinner component for AI loading states
-
 ### v1.0.0 — 2026-03-10 (Initial release)
 
 - Dashboard with budget overview and utilisation bar
@@ -72,28 +48,17 @@
 | FEAT-008 | low | open | Photo/receipt attachment per item | Link images to owner-supplied items or milestone payments | 2026-03-10 |
 | FEAT-009 | high | open | Mobile responsive polish | Test and fix layout on small screens | 2026-03-10 |
 | FEAT-010 | high | open | Add new owner-supplied items manually via UI | Must be able to add items not in the spec doc (e.g. discovered during build) | 2026-03-10 |
-| FEAT-011 | critical | done | Upload zones on Tender Comparison tab | Two areas: one for spec document upload, one for builder tender uploads. Accepts PDF/images. Reworked in v1.2.0 for multi-file persistent storage. | 2026-03-10 |
-| FEAT-016 | high | done | Persistent document storage | Spec docs and tender docs stored as base64 in localStorage | 2026-03-10 |
-| FEAT-017 | high | done | Multi-file spec uploads | Upload multiple PDF/image files, displayed as list with remove buttons | 2026-03-10 |
-| FEAT-018 | high | done | Multi-file tender uploads grouped by builder | User labels uploads with builder name, grouped display | 2026-03-10 |
-| FEAT-019 | high | done | Multi-file AI parsing | All files per section sent in single API call | 2026-03-10 |
-| FEAT-012 | critical | done | AI parsing of spec document | On upload, use Anthropic API to read the spec doc and auto-populate specItems + ownerSupplied items. Should split builder-scope work from owner-supplied fixtures/fittings automatically. | 2026-03-10 |
-| FEAT-013 | critical | done | AI parsing of builder tenders | On upload, use Anthropic API to read each tender, map items to spec, extract pricing, flag deviations from spec, flag omissions. Auto-populate the tender comparison matrix. | 2026-03-10 |
+| FEAT-011 | critical | open | Upload zones on Tender Comparison tab | Two areas: one for spec document upload, one for builder tender uploads. Accepts PDF/images. | 2026-03-10 |
+| FEAT-012 | critical | open | AI parsing of spec document | On upload, use Anthropic API to read the spec doc and auto-populate specItems + ownerSupplied items. Should split builder-scope work from owner-supplied fixtures/fittings automatically. | 2026-03-10 |
+| FEAT-013 | critical | open | AI parsing of builder tenders | On upload, use Anthropic API to read each tender, map items to spec, extract pricing, flag deviations from spec, flag omissions. Auto-populate the tender comparison matrix. | 2026-03-10 |
 | FEAT-014 | high | open | Multiple options per owner-supplied item | Each item (e.g. "kitchen worktop") should support 2-3 supplier/price options. User selects which option is active — only the active one feeds into budget. Example: Option A (Howdens laminate £2,400), Option B (quartz £4,100), Option C (dekton £6,800). | 2026-03-10 |
-| FEAT-015 | high | done | Auto-populate owner-supplied items from spec | When spec doc is parsed by AI, owner-supplied items should be automatically extracted and populated with descriptions and estimated budgets. | 2026-03-10 |
+| FEAT-015 | high | open | Auto-populate owner-supplied items from spec | When spec doc is parsed by AI, owner-supplied items should be automatically extracted and populated with descriptions and estimated budgets. | 2026-03-10 |
 
 ## Closed / Done
 
 | ID | Description | Resolution | Date Closed |
 |----|-------------|------------|-------------|
-| FEAT-011 | Upload zones on Tender Comparison tab | Drag-and-drop upload for spec doc + builder tenders with file preview, parse button, loading/success/error states | 2026-03-10 |
-| FEAT-012 | AI parsing of spec document | Client-side Anthropic API call parses spec into specItems + ownerSupplied items with structured prompts | 2026-03-10 |
-| FEAT-013 | AI parsing of builder tenders | Client-side Anthropic API call maps tender items to spec, extracts pricing, flags deviations/omissions | 2026-03-10 |
-| FEAT-015 | Auto-populate owner-supplied items from spec | Included in FEAT-012 — AI spec parsing extracts owner-supplied items alongside builder-scope items | 2026-03-10 |
-| FEAT-016 | Persistent document storage | Spec docs and tender docs stored as base64 in localStorage within reno-tracker-v2 data object | 2026-03-10 |
-| FEAT-017 | Multi-file spec uploads | Multiple PDF/image files per spec, listed with filename, date, remove button | 2026-03-10 |
-| FEAT-018 | Multi-file tender uploads grouped by builder | Builder name labelling, grouped display, per-file remove | 2026-03-10 |
-| FEAT-019 | Multi-file AI parsing | All files sent together in single API call per section/builder | 2026-03-10 |
+| — | — | — | — |
 
 ---
 
